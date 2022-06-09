@@ -3,14 +3,22 @@ package burp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
+
+import static burp.Keysmith.getHtmlKeys;
+import static burp.Keysmith.getWords;
+
+
 
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
@@ -188,54 +196,6 @@ class RequestWithOffsets {
     public RequestWithOffsets(byte[] request, int[] offsets) {
         this.request = request;
         this.offsets = offsets;
-    }
-}
-
-class ParamInsertionPoint implements IScannerInsertionPoint {
-    byte[] request;
-    String name;
-    String value;
-    byte type;
-
-    ParamInsertionPoint(byte[] request, String name, String value, byte type) {
-        this.request = request;
-        this.name = name;
-        this.value = value;
-        this.type = type;
-    }
-
-    String calculateValue(String unparsed) {
-        return unparsed;
-    }
-
-    @Override
-    public String getInsertionPointName() {
-        return name;
-    }
-
-    @Override
-    public String getBaseValue() {
-        return value;
-    }
-
-    @Override
-    public byte[] buildRequest(byte[] payload) {
-        IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
-        return Utilities.helpers.updateParameter(request, newParam);
-    }
-
-    @Override
-    public int[] getPayloadOffsets(byte[] payload) {
-        //IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
-        return new int[]{0, 0};
-        //return new int[]{newParam.getValueStart(), newParam.getValueEnd()};
-    }
-
-    @Override
-    public byte getInsertionPointType() {
-        return type;
-        //return IScannerInsertionPoint.INS_PARAM_BODY;
-        // return IScannerInsertionPoint.INS_EXTENSION_PROVIDED;
     }
 }
 
