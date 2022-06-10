@@ -32,18 +32,18 @@ public class ServerSidePrototypePollutionScan extends Scan {
                     "constructor","{\"prototype\":{\"json spaces\":\" \"}}", "{\"prototype\":{\"json spaces\":\"\"}}",
                     "__proto__","{\"json spaces\":\" \"}","{\"json spaces\":\"\"}"
             });
-            put("options", new String[]{
-                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}",
-                    "__proto__","{\"head\":true}","{\"head\":false}"
-            });
-            put("status", new String[]{
-                    "constructor","{\"prototype\":{\"status\":510}}", "{\"prototype\":{\"status\":0}}",
-                    "__proto__","{\"status\":510}","{\"status\":0}"
-            });
-            put("exposedHeaders", new String[]{
-                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}", "{\"prototype\":{\"exposedHeaders\":null}}",
-                    "__proto__","{\"exposedHeaders\":[\""+CANARY+"\"]}","{\"exposedHeaders\":null}"
-            });
+//            put("options", new String[]{
+//                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}",
+//                    "__proto__","{\"head\":true}","{\"head\":false}"
+//            });
+//            put("status", new String[]{
+//                    "constructor","{\"prototype\":{\"status\":510}}", "{\"prototype\":{\"status\":0}}",
+//                    "__proto__","{\"status\":510}","{\"status\":0}"
+//            });
+//            put("exposedHeaders", new String[]{
+//                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}", "{\"prototype\":{\"exposedHeaders\":null}}",
+//                    "__proto__","{\"exposedHeaders\":[\""+CANARY+"\"]}","{\"exposedHeaders\":null}"
+//            });
         }
     };
 
@@ -496,11 +496,11 @@ public class ServerSidePrototypePollutionScan extends Scan {
         return Utilities.helpers.buildParameter(Utilities.helpers.urlEncode(paramName), Utilities.helpers.urlEncode(paramValue), insertionPointType);
     }
 
-    private String urlDecodeWithoutPlus(String encoded) {
+    static String urlDecodeWithoutPlus(String encoded) {
         return Utilities.helpers.urlDecode(encoded.replaceAll("\\+", "%2b"));
     }
 
-    private String urlEncodeWithoutPlus(String unEncoded) {
+    static String urlEncodeWithoutPlus(String unEncoded) {
         return Utilities.helpers.urlEncode(unEncoded).replaceAll("\\+", "%20");
     }
 

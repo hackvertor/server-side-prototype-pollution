@@ -3,22 +3,14 @@ package burp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
-
-import static burp.Keysmith.getHtmlKeys;
-import static burp.Keysmith.getWords;
-
-
 
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
@@ -135,8 +127,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         SwingUtilities.invokeLater(new ConfigMenu());
 
         new ServerSidePrototypePollutionScan("Server side prototype pollution scan");
-        new ConstructorScanAddParam("Constructor scan add param");
-        new ConstructorParamScan("Constructor scan param scan");
+        new AddPropertyScan("Add property scan");
+        new PropertyParamScan("Property param scan");
 
         new HeaderPoison("Header poison");
         new PortDOS("port-DoS");
