@@ -9,45 +9,31 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ServerSidePrototypePollutionScan extends Scan {
+public class PrototypePollutionScan extends Scan {
 
     private final String DETAIL = "This application is vulnerable to Server side prototype pollution";
     private final String CANARY = "f1e3f7a9";
     private final Integer MAX_RETRIES = 3;
 
-    private final Map<String, String[]> paramTechniques = new HashMap<String, String[]>()
-    {
-        {
-            put("constructor[prototype][json spaces]", new String[]{" ", "", "spacing"});
-            put("constructor[prototype][status]", new String[]{"blah", "", "status"});
-            put("constructor[prototype][head]", new String[]{"true", "0", "options"});
-            put("constructor[prototype][exposedHeaders][]", new String[]{CANARY, "", "exposedHeaders"});
-        }
-    };
-
     private final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
     {
         {
             put("spacing", new String[]{
-                    "constructor","{\"prototype\":{\"json spaces\":\" \"}}", "{\"prototype\":{\"json spaces\":\"\"}}",
                     "__proto__","{\"json spaces\":\" \"}","{\"json spaces\":\"\"}"
             });
-//            put("options", new String[]{
-//                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}",
-//                    "__proto__","{\"head\":true}","{\"head\":false}"
-//            });
-//            put("status", new String[]{
-//                    "constructor","{\"prototype\":{\"status\":510}}", "{\"prototype\":{\"status\":0}}",
-//                    "__proto__","{\"status\":510}","{\"status\":0}"
-//            });
-//            put("exposedHeaders", new String[]{
-//                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}", "{\"prototype\":{\"exposedHeaders\":null}}",
-//                    "__proto__","{\"exposedHeaders\":[\""+CANARY+"\"]}","{\"exposedHeaders\":null}"
-//            });
+            put("options", new String[]{
+                    "__proto__","{\"head\":true}","{\"head\":false}"
+            });
+            put("status", new String[]{
+                    "__proto__","{\"status\":510}","{\"status\":0}"
+            });
+            put("exposedHeaders", new String[]{
+                    "__proto__","{\"exposedHeaders\":[\""+CANARY+"\"]}","{\"exposedHeaders\":null}"
+            });
         }
     };
 
-    ServerSidePrototypePollutionScan(String name) {
+    PrototypePollutionScan(String name) {
         super(name);
     }
 
@@ -87,18 +73,6 @@ public class ServerSidePrototypePollutionScan extends Scan {
                 } else {
                     cookieHeaderOut.add(urlEncodeWithoutPlus(decodedCookieName)+"="+cookieValue);
                 }
-            } else if(decodedCookieName.contains("[") && decodedCookieName.contains("]")) {
-                for (Map.Entry<String, String[]> injectionEntry : paramTechniques.entrySet()) {
-                    String techniqueParamName = injectionEntry.getKey();
-                    String techniqueParamValue = injectionEntry.getValue()[0];
-                    String nullifyParamValue = injectionEntry.getValue()[1];
-                    String techniqueType = injectionEntry.getValue()[2];
-                    if (!techniqueType.equals(attackType)) {
-                        continue;
-                    }
-                    cookieHeaderOut.add(techniqueParamName+"="+urlEncodeWithoutPlus(nullify ? nullifyParamValue : techniqueParamValue));
-                    cookieHeaderOut.add(urlEncodeWithoutPlus(replaceLastPartOfParamName( decodedCookieName, techniqueParamName))+"="+urlEncodeWithoutPlus(nullify ? nullifyParamValue : techniqueParamValue));
-                }
             } else {
                 cookieHeaderOut.add(urlEncodeWithoutPlus(decodedCookieName)+"=j:"+urlEncodeWithoutPlus(generateJson("{}", jsonTechniques, nullify).toString()));
             }
@@ -122,166 +96,24 @@ public class ServerSidePrototypePollutionScan extends Scan {
         }
     }
 
-    private String replaceLastPartOfParamName(String paramName, String techniqueParamName) {
-        return paramName.replaceAll("\\[.+", "") + techniqueParamName.replace("constructor", "[constructor]");
-    }
-
     private void doParameterAttack(byte[] baseReq, IHttpService service, String attackType) {
-        byte insertionPointType;
-        String method = Utilities.getMethod(baseReq);
-        if(method.equalsIgnoreCase("get")) {
-            insertionPointType = IScannerInsertionPoint.INS_PARAM_URL;
-        } else {
-            insertionPointType = IScannerInsertionPoint.INS_PARAM_BODY;
-        }
-
-        for (Map.Entry<String, String[]> injectionEntry : paramTechniques.entrySet()) {
-            String techniqueParamName = injectionEntry.getKey();
-            String techniqueParamValue = injectionEntry.getValue()[0];
-            String nullifyParamValue = injectionEntry.getValue()[1];
-            String techniqueType = injectionEntry.getValue()[2];
-
-            if(!techniqueType.equals(attackType)) {
+        byte[] clonedBaseReq = baseReq.clone();
+        List<IParameter> params = Utilities.helpers.analyzeRequest(service, clonedBaseReq).getParameters();
+        for (IParameter param : params) {
+            if(param.getType() != IScannerInsertionPoint.INS_PARAM_URL && param.getType() != IScannerInsertionPoint.INS_PARAM_BODY) {
                 continue;
             }
-
-            byte[] clonedBaseReq = baseReq.clone();
-            List<IParameter> params = Utilities.helpers.analyzeRequest(service, clonedBaseReq).getParameters();
-            for (IParameter param : params) {
-                if(param.getType() != IScannerInsertionPoint.INS_PARAM_URL && param.getType() != IScannerInsertionPoint.INS_PARAM_BODY) {
-                    continue;
-                }
-                String paramName = param.getName();
-                String paramValue = Utilities.helpers.urlDecode(param.getValue()).trim();
-                if((paramValue.startsWith("{") || paramValue.startsWith("[")) && isValidJson(paramValue)) {
-                    for (Map.Entry<String, String[]> technique : jsonTechniques.entrySet()) {
-                        if(!technique.getKey().equals(attackType)) {
-                            continue;
-                        }
-                        byte[] attackRequest = baseReq.clone();
-                        JsonElement attackJson = generateJson(paramValue, technique.getValue(), false);
-                        attackRequest = Utilities.helpers.updateParameter(attackRequest, createParameter(paramName, attackJson.toString(),param.getType()));
-                        doJsonAttack(clonedBaseReq, service, attackRequest, attackType, paramValue, false, technique.getValue(), false, param);
-                    }
-                } else if(paramName.contains("[") && paramName.contains("]")) {
-                    techniqueParamName =  replaceLastPartOfParamName(paramName, techniqueParamName);
-                    clonedBaseReq = Utilities.helpers.removeParameter(clonedBaseReq, param);
-                    break;
-                }
-            }
-
-            IParameter attackParam = createParameter(techniqueParamName, techniqueParamValue, insertionPointType);
-            byte[] attackRequest = addParameter(clonedBaseReq, attackParam);
-            Resp attackResp = request(service, attackRequest, MAX_RETRIES);
-
-            if(attackResp.failed()) {
-                continue;
-            }
-
-            if(techniqueType.equals("spacing")) {
-                Resp baseResp = request(service, clonedBaseReq, MAX_RETRIES);
-                String response = Utilities.getBody(baseResp.getReq().getResponse());
-
-                if(baseResp.failed()) {
-                    continue;
-                }
-
-                if (hasSpacing(response)) {
-                    IParameter nullifyParam = createParameter(techniqueParamName, nullifyParamValue, insertionPointType);
-                    byte[] nullifyRequest = addParameter(clonedBaseReq, nullifyParam);
-                    Resp nullify = request(service, nullifyRequest, MAX_RETRIES);
-                    Resp nullifiedResponse = request(service, clonedBaseReq, MAX_RETRIES);
-
-                    if(nullifiedResponse.failed()) {
+            String paramName = param.getName();
+            String paramValue = Utilities.helpers.urlDecode(param.getValue()).trim();
+            if((paramValue.startsWith("{") || paramValue.startsWith("[")) && isValidJson(paramValue)) {
+                for (Map.Entry<String, String[]> technique : jsonTechniques.entrySet()) {
+                    if(!technique.getKey().equals(attackType)) {
                         continue;
                     }
-
-                    String nullifiedResponseStr = Utilities.getBody(nullifiedResponse.getReq().getResponse());
-                    if (!hasSpacing(nullifiedResponseStr)) {
-                        reportIssue("PP param spacing via " + method, DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp, nullify, nullifiedResponse);
-                    }
-                }
-            } else if(techniqueType.equals("status")) {
-                Resp invalidJsonResp = makeInvalidJsonRequest(service, clonedBaseReq);
-
-                if(invalidJsonResp.failed()) {
-                    continue;
-                }
-
-                if(hasStatusCode(500, invalidJsonResp)) {
-                    IParameter nullifyParam = createParameter(techniqueParamName, nullifyParamValue, insertionPointType);
-                    byte[] nullifyAttackRequest = addParameter(clonedBaseReq, nullifyParam);
-                    Resp nullifyAttackResp = request(service, nullifyAttackRequest, MAX_RETRIES);
-
-                    if(nullifyAttackResp.failed()) {
-                        continue;
-                    }
-
-                    Resp nullifiedInvalidJsonResp = makeInvalidJsonRequest(service, clonedBaseReq);
-
-                    if(nullifiedInvalidJsonResp.failed()) {
-                        continue;
-                    }
-
-                    if(!hasStatusCode(500, nullifiedInvalidJsonResp)) {
-                        reportIssue("PP param status code via " + method, DETAIL, "High", "Firm", ".", clonedBaseReq, attackResp, invalidJsonResp, nullifyAttackResp, nullifiedInvalidJsonResp);
-                    }
-                }
-            } else if(techniqueType.equals("options")) {
-                Resp optionsResp = request(service, Utilities.setMethod(clonedBaseReq, "OPTIONS"), MAX_RETRIES);
-
-                if(optionsResp.failed()) {
-                    continue;
-                }
-
-                String allow = Utilities.getHeader(optionsResp.getReq().getResponse(), "Allow").toLowerCase();
-                if(!allow.contains("head") && allow.length() > 0) {
-                    IParameter nullifyParam = createParameter(techniqueParamName, nullifyParamValue, insertionPointType);
-                    byte[] nullifyAttackRequest = addParameter(clonedBaseReq, nullifyParam);
-                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
-
-                    if(nullifyAttackRequestResp.failed()) {
-                        continue;
-                    }
-
-                    Resp nullifyOptionsResp = request(service, Utilities.setMethod(clonedBaseReq, "OPTIONS"), MAX_RETRIES);
-
-                    if(nullifyOptionsResp.failed()) {
-                        continue;
-                    }
-
-                    String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
-                    if(nullifiedAllow.contains("head")) {
-                        reportIssue("PP param head via " + method, DETAIL, "High", "Firm", ".", clonedBaseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
-                    }
-                }
-            } else if(attackType.equals("exposedHeaders")) {
-                Resp baseResp = request(service, clonedBaseReq, MAX_RETRIES);
-
-                if(baseResp.failed()) {
-                    continue;
-                }
-
-                String accessControlExposeHeaders = Utilities.getHeader(baseResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
-                if(accessControlExposeHeaders.contains(CANARY)) {
-                    IParameter nullifyParam = createParameter(techniqueParamName, nullifyParamValue, insertionPointType);
-                    byte[] nullifyAttackRequest = addParameter(clonedBaseReq, nullifyParam);
-                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
-
-                    if(nullifyAttackRequestResp.failed()) {
-                        continue;
-                    }
-
-                    Resp nullifyResp = request(service, clonedBaseReq, MAX_RETRIES);
-
-                    if(nullifyResp.failed()) {
-                        continue;
-                    }
-
-                    String nullifiedAccessControlExposeHeaders = Utilities.getHeader(nullifyResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
-                    if(!nullifiedAccessControlExposeHeaders.contains(CANARY)) {
-                        reportIssue("PP param exposedHeaders via " + method, DETAIL, "High", "Firm", ".", clonedBaseReq, attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
-                    }
+                    byte[] attackRequest = baseReq.clone();
+                    JsonElement attackJson = generateJson(paramValue, technique.getValue(), false);
+                    attackRequest = Utilities.helpers.updateParameter(attackRequest, createParameter(paramName, attackJson.toString(),param.getType()));
+                    doJsonAttack(clonedBaseReq, service, attackRequest, attackType, paramValue, false, technique.getValue(), false, param);
                 }
             }
         }
@@ -486,10 +318,6 @@ public class ServerSidePrototypePollutionScan extends Scan {
             }
         }
         return jsonElement;
-    }
-
-    private byte[] addParameter(byte[] req, IParameter parameter) {
-        return Utilities.helpers.addParameter(req, parameter);
     }
 
     private IParameter createParameter(String paramName, String paramValue, byte insertionPointType) {

@@ -29,17 +29,17 @@ public class AddPropertyScan extends Scan {
         String invalidProperty = Utilities.globalSettings.getString("invalid property name");
         String regex = Utilities.globalSettings.getString("vulnerable response regex");
 
-        IParameter parameter = Utilities.helpers.buildParameter(ServerSidePrototypePollutionScan.urlEncodeWithoutPlus(validProperty), ServerSidePrototypePollutionScan.urlDecodeWithoutPlus(validProperty), insertionPointType);
+        IParameter parameter = Utilities.helpers.buildParameter(PrototypePollutionScan.urlEncodeWithoutPlus(validProperty), PrototypePollutionScan.urlDecodeWithoutPlus(validProperty), insertionPointType);
         byte[] attackReq = Utilities.helpers.addParameter(baseReq, parameter);
         Resp attackResp = request(service, attackReq, MAX_RETRIES);
         if(PropertyParamScan.regexResponse(attackResp)) {
-            IParameter nullifyParameter = Utilities.helpers.buildParameter(ServerSidePrototypePollutionScan.urlEncodeWithoutPlus(invalidProperty), ServerSidePrototypePollutionScan.urlEncodeWithoutPlus(invalidProperty), insertionPointType);
+            IParameter nullifyParameter = Utilities.helpers.buildParameter(PrototypePollutionScan.urlEncodeWithoutPlus(invalidProperty), PrototypePollutionScan.urlEncodeWithoutPlus(invalidProperty), insertionPointType);
             byte[] nullifyReq = Utilities.helpers.addParameter(baseReq, nullifyParameter);
             Resp nullifyResp = request(service, nullifyReq, MAX_RETRIES);
             if(!PropertyParamScan.regexResponse(nullifyResp)) {
                 IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PropertyParamScan.getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), PropertyParamScan.getRegexMarkerPositions(attackResp, regex));
                 IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), PropertyParamScan.getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
-                ServerSidePrototypePollutionScan.reportIssue("Add property scan using "+validProperty, "An added parameter "+validProperty+" was added to the request and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseReq, new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
+                PrototypePollutionScan.reportIssue("Add property scan using "+validProperty, "An added parameter "+validProperty+" was added to the request and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseReq, new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
             }
         }
     }
