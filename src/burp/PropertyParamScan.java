@@ -28,16 +28,15 @@ public class PropertyParamScan extends ParamScan {
         String invalidProperty = Utilities.globalSettings.getString("invalid property name");
         String regex = Utilities.globalSettings.getString("vulnerable response regex");
 
-
-        byte[] attackReq = insertionPoint.buildRequest(PrototypePollutionScan.urlEncodeWithoutPlus(validProperty).getBytes());
+        byte[] attackReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(validProperty).getBytes());
         Resp attackResp = request(service, attackReq, MAX_RETRIES);
         if(regexResponse(attackResp)) {
-            byte[] nullifyReq = insertionPoint.buildRequest(PrototypePollutionScan.urlEncodeWithoutPlus(invalidProperty).getBytes());
+            byte[] nullifyReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidProperty).getBytes());
             Resp nullifyResp = request(service, nullifyReq, MAX_RETRIES);
             if(!regexResponse(nullifyResp)) {
                 IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), getRegexMarkerPositions(attackResp, regex));
                 IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
-                PrototypePollutionScan.reportIssue("Property param scan using "+validProperty, "The parameter "+insertionPoint.getInsertionPointName()+" was identified and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseRequestResponse.getRequest(), new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
+                PrototypePollutionBodyScan.reportIssue("Property param scan using "+validProperty, "The parameter "+insertionPoint.getInsertionPointName()+" was identified and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseRequestResponse.getRequest(), new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
             }
         }
 

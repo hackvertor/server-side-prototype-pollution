@@ -9,13 +9,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class PrototypePollutionScan extends Scan {
+public class PrototypePollutionBodyScan extends Scan {
 
     private final String DETAIL = "This application is vulnerable to Server side prototype pollution";
-    private final String CANARY = "f1e3f7a9";
+    static final String CANARY = "f1e3f7a9";
     private final Integer MAX_RETRIES = 3;
 
-    private final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
+    static final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
     {
         {
             put("spacing", new String[]{
@@ -33,62 +33,24 @@ public class PrototypePollutionScan extends Scan {
         }
     };
 
-    PrototypePollutionScan(String name) {
+    PrototypePollutionBodyScan(String name) {
         super(name);
     }
 
     @Override
     List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
         for (Map.Entry<String, String[]> technique : jsonTechniques.entrySet()) {
-            String attackType = technique.getKey();
-            doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), attackType, true);
+            doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), technique.getKey());
         }
 
         return null;
     }
 
-    private byte[] injectCookies(byte[] req, String[] jsonTechniques, Boolean nullify, String attackType) {
-        List<String> cookieHeaderOut = new ArrayList<>();
-        String cookieHeader = Utilities.getHeader(req, "Cookie");
-        if(cookieHeader.length() == 0) {
-            return req;
-        }
-        String[] cookies = cookieHeader.split(";");
-
-        for(int i=0;i< cookies.length;i++) {
-            String cookie = cookies[i];
-            String[] cookieNameValue = cookie.split("=");
-            String cookieName = cookieNameValue[0];
-            String cookieValue = cookieNameValue[1];
-            String decodedCookieName = urlDecodeWithoutPlus(cookieName);
-            String decodedCookieValue = urlDecodeWithoutPlus(cookieValue.trim());
-            if((decodedCookieValue.startsWith("j:") && decodedCookieValue.contains("{") && decodedCookieValue.contains("}")) || decodedCookieValue.startsWith("{") || decodedCookieValue.startsWith("[{]")) {
-                Boolean jsonCookieFlag = false;
-                if(decodedCookieValue.startsWith("j:")) {
-                    jsonCookieFlag = true;
-                    decodedCookieValue = decodedCookieValue.substring(2);
-                }
-                if(isValidJson(decodedCookieValue)) {
-                    cookieHeaderOut.add(urlEncodeWithoutPlus(decodedCookieName)+"="+(jsonCookieFlag ? "j:" : "")+urlEncodeWithoutPlus(generateJson(decodedCookieValue, jsonTechniques, nullify).toString()));
-                } else {
-                    cookieHeaderOut.add(urlEncodeWithoutPlus(decodedCookieName)+"="+cookieValue);
-                }
-            } else {
-                cookieHeaderOut.add(urlEncodeWithoutPlus(decodedCookieName)+"=j:"+urlEncodeWithoutPlus(generateJson("{}", jsonTechniques, nullify).toString()));
-            }
-        }
-
-        return Utilities.addOrReplaceHeader(req, "Cookie", String.join(";", cookieHeaderOut));
-    }
-
-    private JsonElement generateJson(String jsonString, String[] currentTechnique, Boolean nullify) {
+    static JsonElement generateJson(String jsonString, String[] currentTechnique, Boolean nullify) {
         JsonParser parser = new JsonParser();
-        JsonElement jsonElement = null;
-        JsonElement json = null;
-
         try {
-            jsonElement = parser.parse(jsonString);
-            json = traverseJsonTreeAndInject(deepJsonClone(jsonElement), currentTechnique, nullify);
+            JsonElement jsonElement = parser.parse(jsonString);
+            JsonElement json = traverseJsonTreeAndInject(deepJsonClone(jsonElement), currentTechnique, nullify);
             return json;
         } catch(JsonSyntaxException e) {
             Utilities.err("Invalid JSON:" + e);
@@ -96,32 +58,9 @@ public class PrototypePollutionScan extends Scan {
         }
     }
 
-    private void doParameterAttack(byte[] baseReq, IHttpService service, String attackType) {
-        byte[] clonedBaseReq = baseReq.clone();
-        List<IParameter> params = Utilities.helpers.analyzeRequest(service, clonedBaseReq).getParameters();
-        for (IParameter param : params) {
-            if(param.getType() != IScannerInsertionPoint.INS_PARAM_URL && param.getType() != IScannerInsertionPoint.INS_PARAM_BODY) {
-                continue;
-            }
-            String paramName = param.getName();
-            String paramValue = Utilities.helpers.urlDecode(param.getValue()).trim();
-            if((paramValue.startsWith("{") || paramValue.startsWith("[")) && isValidJson(paramValue)) {
-                for (Map.Entry<String, String[]> technique : jsonTechniques.entrySet()) {
-                    if(!technique.getKey().equals(attackType)) {
-                        continue;
-                    }
-                    byte[] attackRequest = baseReq.clone();
-                    JsonElement attackJson = generateJson(paramValue, technique.getValue(), false);
-                    attackRequest = Utilities.helpers.updateParameter(attackRequest, createParameter(paramName, attackJson.toString(),param.getType()));
-                    doJsonAttack(clonedBaseReq, service, attackRequest, attackType, paramValue, false, technique.getValue(), false, param);
-                }
-            }
-        }
-    }
-
-    private byte[] createRequest(String jsonString, Boolean shouldInjectCookies, byte[] baseReq, String[] currentTechnique, String attackType, Boolean hasBody, Boolean nullify, IParameter param) {
+    private byte[] createRequest(String jsonString, byte[] baseReq, String[] currentTechnique, String attackType, Boolean hasBody, Boolean nullify, IParameter param) {
         JsonElement json = generateJson(jsonString, currentTechnique, nullify);
-        byte[] request = shouldInjectCookies ? injectCookies(baseReq.clone(), currentTechnique, nullify, attackType) : baseReq.clone();
+        byte[] request = baseReq.clone();
         if(hasBody) {
             request = Utilities.setBody(request, json.toString());
             request = Utilities.fixContentLength(request);
@@ -132,28 +71,24 @@ public class PrototypePollutionScan extends Scan {
         return request;
     }
 
-    private void doAttack(byte[] baseReq, String jsonString, IHttpService service,  String[] currentTechnique, String attackType, Boolean shouldInjectCookies) {
+    private void doAttack(byte[] baseReq, String jsonString, IHttpService service,  String[] currentTechnique, String attackType) {
 
         JsonElement attackJson = generateJson(jsonString, currentTechnique, false);
 
-        Boolean hasBody = false;
-        byte[] attackRequest = shouldInjectCookies ? injectCookies(baseReq.clone(), currentTechnique, false, attackType) : baseReq.clone();
+        byte[] attackRequest = baseReq.clone();
 
         if(attackJson != null && !attackJson.isJsonNull()) {
             attackRequest = Utilities.setBody(attackRequest, attackJson.toString());
             attackRequest = Utilities.fixContentLength(attackRequest);
-            hasBody = true;
+        } else {
+            attackRequest = Utilities.setBody(attackRequest, "{}");
+            attackRequest = Utilities.fixContentLength(attackRequest);
         }
 
-        if(!hasBody) {
-            doParameterAttack(baseReq, service, attackType);
-        }
-
-        doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, shouldInjectCookies, currentTechnique, hasBody, null);
-
+        doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null);
      }
 
-     private void doJsonAttack(byte[] baseReq, IHttpService service, byte[] attackRequest, String attackType, String jsonString, Boolean shouldInjectCookies, String[] currentTechnique, Boolean hasBody, IParameter param) {
+     private void doJsonAttack(byte[] baseReq, IHttpService service, byte[] attackRequest, String attackType, String jsonString, String[] currentTechnique, Boolean hasBody, IParameter param) {
          Resp attackResp = request(service, attackRequest, MAX_RETRIES);
 
          if(attackResp.failed()) {
@@ -169,7 +104,7 @@ public class PrototypePollutionScan extends Scan {
 
              String response = Utilities.getBody(baseResp.getReq().getResponse());
              if(hasSpacing(response)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, shouldInjectCookies, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyResponse = request(service, baseReq, MAX_RETRIES);
 
@@ -185,7 +120,7 @@ public class PrototypePollutionScan extends Scan {
          } else if(attackType.equals("status")) {
              Resp invalidJsonResp = makeInvalidJsonRequest(service, baseReq);
              if(hasStatusCode(510, invalidJsonResp)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, shouldInjectCookies, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -207,7 +142,7 @@ public class PrototypePollutionScan extends Scan {
 
              String allow = Utilities.getHeader(optionsResp.getReq().getResponse(), "Allow").toLowerCase();
              if(!allow.contains("head") && allow.length() > 0) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, shouldInjectCookies, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -235,7 +170,7 @@ public class PrototypePollutionScan extends Scan {
 
              String accessControlExposeHeaders = Utilities.getHeader(baseResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
              if(accessControlExposeHeaders.contains(CANARY)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, shouldInjectCookies, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -275,7 +210,7 @@ public class PrototypePollutionScan extends Scan {
         return matcher.find();
     }
 
-    public JsonElement deepJsonClone(JsonElement jsonElement) {
+    static JsonElement deepJsonClone(JsonElement jsonElement) {
         try {
             JsonParser parser = new JsonParser();
             return parser.parse(jsonElement.toString());
@@ -285,7 +220,7 @@ public class PrototypePollutionScan extends Scan {
         }
     }
 
-    public JsonElement traverseJsonTreeAndInject(JsonElement jsonElement, String[] currentTechnique, Boolean nullify) {
+    static JsonElement traverseJsonTreeAndInject(JsonElement jsonElement, String[] currentTechnique, Boolean nullify) {
         if (jsonElement.isJsonNull()) {
             return jsonElement;
         }
@@ -320,8 +255,8 @@ public class PrototypePollutionScan extends Scan {
         return jsonElement;
     }
 
-    private IParameter createParameter(String paramName, String paramValue, byte insertionPointType) {
-        return Utilities.helpers.buildParameter(Utilities.helpers.urlEncode(paramName), Utilities.helpers.urlEncode(paramValue), insertionPointType);
+    static IParameter createParameter(String paramName, String paramValue, byte insertionPointType) {
+        return Utilities.helpers.buildParameter(urlEncodeWithoutPlus(paramName), urlEncodeWithoutPlus(paramValue), insertionPointType);
     }
 
     static String urlDecodeWithoutPlus(String encoded) {
