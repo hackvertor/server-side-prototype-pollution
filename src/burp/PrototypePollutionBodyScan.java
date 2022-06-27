@@ -115,6 +115,8 @@ public class PrototypePollutionBodyScan extends Scan {
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                  if(!hasSpacing(nullifyResponseStr)) {
                      reportIssue("PP JSON spacing", DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp, nullifyResponse);
+                 } else {
+                     reportIssue("PP JSON spacing but did not reset", DETAIL, "High", "Tentative", ".", baseReq, attackResp, baseResp, nullifyResponse);
                  }
              }
          } else if(attackType.equals("status")) {
@@ -131,6 +133,8 @@ public class PrototypePollutionBodyScan extends Scan {
                  Resp invalidJsonNullified = makeInvalidJsonRequest(service, baseReq);
                  if(!hasStatusCode(510, invalidJsonNullified)) {
                      reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseReq, attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
+                 } else {
+                     reportIssue("PP JSON status but did not reset", DETAIL, "High", "Tentative", ".", baseReq, attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                  }
              }
          } else if(attackType.equals("options")) {
@@ -159,6 +163,8 @@ public class PrototypePollutionBodyScan extends Scan {
                  String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                  if(nullifiedAllow.contains("head")) {
                      reportIssue("PP JSON head", DETAIL, "High", "Firm", ".", baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                 } else {
+                     reportIssue("PP JSON head but did not reset", DETAIL, "High", "Tentative", ".", baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                  }
              }
          } else if(attackType.equals("exposedHeaders")) {
@@ -187,6 +193,8 @@ public class PrototypePollutionBodyScan extends Scan {
                  String nullifiedAccessControlExposeHeaders = Utilities.getHeader(nullifyResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
                  if(!nullifiedAccessControlExposeHeaders.contains(CANARY)) {
                      reportIssue("PP JSON exposedHeaders", DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
+                 } else {
+                     reportIssue("PP JSON exposedHeaders but did not reset", DETAIL, "High", "Tentative", ".", baseReq, attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
                  }
              }
          }

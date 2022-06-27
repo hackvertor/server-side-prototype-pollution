@@ -2,12 +2,8 @@ package burp;
 
 import com.google.gson.JsonElement;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PrototypePollutionParamScan extends ParamScan {
     private final String DETAIL = "This application is vulnerable to Server side prototype pollution";
@@ -26,7 +22,6 @@ public class PrototypePollutionParamScan extends ParamScan {
             case IScannerInsertionPoint.INS_PARAM_URL:
             case IScannerInsertionPoint.INS_PARAM_COOKIE:
             case IScannerInsertionPoint.INS_PARAM_JSON:
-                Utilities.out("Found insertion point:" + insertionPoint.getInsertionPointType());
                 injectInsertionPoint(baseRequestResponse, insertionPoint);
                 break;
         }
@@ -62,9 +57,16 @@ public class PrototypePollutionParamScan extends ParamScan {
             }
 
             if(attackType.equals("spacing")) {
-                Resp baseResp = request(service, baseRequestResponse.getRequest(), MAX_RETRIES);
+                byte[] req;
+                if(baseValue.equals("{}")) {
+                    req = baseRequestResponse.getRequest().clone();
+                    req = Utilities.helpers.updateParameter(req, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), "{\"test\":\"test\"}", insertionPoint.getInsertionPointType()));
+                } else {
+                    req = baseRequestResponse.getRequest();
+                }
+                Resp baseResp = request(service, req, MAX_RETRIES);
                 String response = Utilities.getBody(baseResp.getReq().getResponse());
-                if(hasSpacing(response)) {
+                if(PrototypePollutionBodyScan.hasSpacing(response)) {
                     byte[] nullifyAttackRequest;
                     if(insertionPoint.getInsertionPointType() == IScannerInsertionPoint.INS_PARAM_JSON) {
                         nullifyAttackRequest = insertionPoint.buildRequest(nullifyInjection.getBytes());
@@ -81,13 +83,15 @@ public class PrototypePollutionParamScan extends ParamScan {
                     }
 
                     String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
-                    if(!hasSpacing(nullifyResponseStr)) {
-                        reportIssue("PP JSON spacing", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
+                    if(!PrototypePollutionBodyScan.hasSpacing(nullifyResponseStr)) {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON spacing", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
+                    } else {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON spacing but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
                     }
                 }
             } else if(attackType.equals("status")) {
                 Resp invalidJsonResp = makeInvalidJsonRequest(service, insertionPoint);
-                if(hasStatusCode(510, invalidJsonResp)) {
+                if(PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonResp)) {
                     byte[] nullifyAttackRequest;
                     if(insertionPoint.getInsertionPointType() == IScannerInsertionPoint.INS_PARAM_JSON) {
                         nullifyAttackRequest = insertionPoint.buildRequest(nullifyInjection.getBytes());
@@ -103,8 +107,10 @@ public class PrototypePollutionParamScan extends ParamScan {
                     }
 
                     Resp invalidJsonNullified = makeInvalidJsonRequest(service, insertionPoint);
-                    if(!hasStatusCode(510, invalidJsonNullified)) {
-                        reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
+                    if(!PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonNullified)) {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
+                    } else {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON status but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                     }
                 }
             } else if(attackType.equals("options")) {
@@ -139,7 +145,9 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                     if(nullifiedAllow.contains("head")) {
-                        reportIssue("PP JSON head", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                        PrototypePollutionBodyScan.reportIssue("PP JSON head", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                    } else {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON head but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                     }
                 }
             } else if(attackType.equals("exposedHeaders")) {
@@ -174,7 +182,9 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     String nullifiedAccessControlExposeHeaders = Utilities.getHeader(nullifyResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
                     if(!nullifiedAccessControlExposeHeaders.contains(CANARY)) {
-                        reportIssue("PP JSON exposedHeaders", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
+                        PrototypePollutionBodyScan.reportIssue("PP JSON exposedHeaders", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
+                    } else {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON exposedHeaders but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
                     }
                 }
             }
@@ -190,32 +200,5 @@ public class PrototypePollutionParamScan extends ParamScan {
             invalidJsonAttackRequest = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidJson).getBytes());
         }
         return request(service, invalidJsonAttackRequest, MAX_RETRIES);
-    }
-
-    static Boolean hasSpacing(String response) {
-        String responseStart = response.substring(0,response.length() > 20 ? 20 : response.length());
-        Pattern regex = Pattern.compile("^\\s*[{\\[]\\s+", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = regex.matcher(responseStart);
-        return matcher.find();
-    }
-
-    static Boolean hasStatusCode(Integer status, Resp response) {
-        return response.getStatus() == status;
-    }
-
-    static void reportIssue(String title, String detail, String severity, String confidence, String remediation, byte[] baseBytes, Resp... requests) {
-        IHttpRequestResponse base = requests[0].getReq();
-        IHttpService service = base.getHttpService();
-        ArrayList<IHttpRequestResponse> reqsToReport = new ArrayList();
-        if (baseBytes != null) {
-            Resp baseReq = new Resp(new Req(baseBytes, (byte[])null, service));
-            reqsToReport.add(baseReq.getReq());
-        }
-        int len = requests.length;
-        for(int i = 0; i < len; ++i) {
-            Resp request = requests[i];
-            reqsToReport.add(request.getReq());
-        }
-        Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(base.getRequest(), service), reqsToReport.toArray(new IHttpRequestResponse[0]), title, detail, severity, confidence, remediation));
     }
 }
