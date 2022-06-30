@@ -158,7 +158,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                  if(nullifiedAllow.contains("head")) {
-                     reportIssue("PP JSON head", DETAIL, "High", "Firm", ".", baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                     reportIssue("PP JSON options", DETAIL, "High", "Firm", ".", baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                  }
              }
          } else if(attackType.equals("exposedHeaders")) {

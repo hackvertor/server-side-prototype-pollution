@@ -140,7 +140,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                     if(nullifiedAllow.contains("head")) {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON head", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                        PrototypePollutionBodyScan.reportIssue("PP JSON options", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                     }
                 }
             } else if(attackType.equals("exposedHeaders")) {
