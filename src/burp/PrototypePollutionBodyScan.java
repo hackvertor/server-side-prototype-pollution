@@ -73,6 +73,10 @@ public class PrototypePollutionBodyScan extends Scan {
 
     private void doAttack(byte[] baseReq, String jsonString, IHttpService service,  String[] currentTechnique, String attackType) {
 
+        if(!jsonString.trim().startsWith("{")) {
+            return;
+        }
+
         JsonElement attackJson = generateJson(jsonString, currentTechnique, false);
 
         byte[] attackRequest = baseReq.clone();
@@ -80,12 +84,8 @@ public class PrototypePollutionBodyScan extends Scan {
         if(attackJson != null && !attackJson.isJsonNull()) {
             attackRequest = Utilities.setBody(attackRequest, attackJson.toString());
             attackRequest = Utilities.fixContentLength(attackRequest);
-        } else {
-            attackRequest = Utilities.setBody(attackRequest, "{}");
-            attackRequest = Utilities.fixContentLength(attackRequest);
+            doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null);
         }
-
-        doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null);
      }
 
      private void doJsonAttack(byte[] baseReq, IHttpService service, byte[] attackRequest, String attackType, String jsonString, String[] currentTechnique, Boolean hasBody, IParameter param) {
