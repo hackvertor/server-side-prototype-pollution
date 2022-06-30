@@ -41,7 +41,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
             if(insertionPoint.getInsertionPointType() == IScannerInsertionPoint.INS_PARAM_JSON) {
                 attackReq = insertionPoint.buildRequest(nullifyInjection.getBytes());
-            } else if(baseValue.startsWith("{") && PrototypePollutionBodyScan.isValidJson(baseValue)) {
+            } else if(baseValue.trim().startsWith("{") && PrototypePollutionBodyScan.isValidJson(baseValue)) {
                 attackReq = baseRequestResponse.getRequest().clone();
                 JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), false);
                 attackReq = Utilities.helpers.updateParameter(attackReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(),insertionPoint.getInsertionPointType()));
