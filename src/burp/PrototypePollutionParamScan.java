@@ -85,8 +85,6 @@ public class PrototypePollutionParamScan extends ParamScan {
                     String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                     if(!PrototypePollutionBodyScan.hasSpacing(nullifyResponseStr)) {
                         PrototypePollutionBodyScan.reportIssue("PP JSON spacing", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
-                    } else {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON spacing but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
                     }
                 }
             } else if(attackType.equals("status")) {
@@ -109,8 +107,6 @@ public class PrototypePollutionParamScan extends ParamScan {
                     Resp invalidJsonNullified = makeInvalidJsonRequest(service, insertionPoint);
                     if(!PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonNullified)) {
                         PrototypePollutionBodyScan.reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
-                    } else {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON status but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                     }
                 }
             } else if(attackType.equals("options")) {
@@ -146,8 +142,6 @@ public class PrototypePollutionParamScan extends ParamScan {
                     String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                     if(nullifiedAllow.contains("head")) {
                         PrototypePollutionBodyScan.reportIssue("PP JSON head", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
-                    } else {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON head but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                     }
                 }
             } else if(attackType.equals("exposedHeaders")) {
@@ -183,8 +177,6 @@ public class PrototypePollutionParamScan extends ParamScan {
                     String nullifiedAccessControlExposeHeaders = Utilities.getHeader(nullifyResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
                     if(!nullifiedAccessControlExposeHeaders.contains(CANARY)) {
                         PrototypePollutionBodyScan.reportIssue("PP JSON exposedHeaders", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
-                    } else {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON exposedHeaders but did not reset", DETAIL, "High", "Tentative", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
                     }
                 }
             }
