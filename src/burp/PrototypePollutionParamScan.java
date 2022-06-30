@@ -16,7 +16,6 @@ public class PrototypePollutionParamScan extends ParamScan {
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-        Utilities.out("Insertion point:" + insertionPoint.getInsertionPointType());
         switch(insertionPoint.getInsertionPointType()) {
             case IScannerInsertionPoint.INS_PARAM_BODY:
             case IScannerInsertionPoint.INS_PARAM_URL:
