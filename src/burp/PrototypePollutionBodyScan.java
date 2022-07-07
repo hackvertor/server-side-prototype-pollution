@@ -273,9 +273,14 @@ public class PrototypePollutionBodyScan extends Scan {
 
     private Resp makeInvalidJsonRequest(IHttpService service, byte[] req) {
         String method = Utilities.getMethod(req);
-        String contentType = Utilities.getHeader(req, "Content-Type");
+        String contentTypeText = "Content-Type";
+        String contentType = Utilities.getHeader(req, contentTypeText);
+        if(contentType.length() == 0) {
+            contentTypeText = "content-type";
+            contentType = Utilities.getHeader(req, contentTypeText);
+        }
         if(contentType.length() == 0 || contentType.contains("text/html") || contentType.contains("application/x-www-form-urlencoded")) {
-            req = Utilities.addOrReplaceHeader(req, "Content-Type", "application/json");
+            req = Utilities.addOrReplaceHeader(req, contentTypeText, "application/json");
         }
         req = Utilities.addOrReplaceHeader(req, "Content-Length", "0");
         req = Utilities.setBody(req, method.equalsIgnoreCase("get") ? "\n{" : "{");
