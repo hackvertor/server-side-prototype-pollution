@@ -267,6 +267,23 @@ public class PrototypePollutionBodyScan extends Scan {
         return Utilities.helpers.urlEncode(unEncoded).replaceAll("\\+", "%20");
     }
 
+    public static byte[] addJsonBodyParameter(byte[] req, String propertyName, String propertyValue) {
+        byte[] modifiedReq;
+        String body = Utilities.getBody(req);
+        if (body.trim().startsWith("{") && PrototypePollutionBodyScan.isValidJson(body)) {
+            try {
+                JsonParser parser = new JsonParser();
+                JsonElement jsonElement = parser.parse(body);
+                jsonElement = traverseJsonTreeAndInject(jsonElement, new String[]{propertyName, propertyValue}, false);
+                modifiedReq = Utilities.setBody(req,jsonElement.toString());
+                return modifiedReq;
+            } catch (JsonSyntaxException e) {
+                Utilities.err("Invalid JSON:" + e);
+            }
+        }
+        return null;
+    }
+
     static Boolean hasStatusCode(Integer status, Resp response) {
         return response.getStatus() == status;
     }
