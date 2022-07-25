@@ -38,7 +38,7 @@ public class PrototypePollutionBodyScan extends Scan {
     }
 
     @Override
-    List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+    public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
         for (Map.Entry<String, String[]> technique : jsonTechniques.entrySet()) {
             doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), technique.getKey());
         }
@@ -58,7 +58,7 @@ public class PrototypePollutionBodyScan extends Scan {
         }
     }
 
-    private byte[] createRequest(String jsonString, byte[] baseReq, String[] currentTechnique, String attackType, Boolean hasBody, Boolean nullify, IParameter param) {
+    private byte[] createRequest(String jsonString, byte[] baseReq, String[] currentTechnique, Boolean hasBody, Boolean nullify, IParameter param) {
         JsonElement json = generateJson(jsonString, currentTechnique, nullify);
         byte[] request = baseReq.clone();
         if(hasBody) {
@@ -71,7 +71,7 @@ public class PrototypePollutionBodyScan extends Scan {
         return request;
     }
 
-    private void doAttack(byte[] baseReq, String jsonString, IHttpService service,  String[] currentTechnique, String attackType) {
+    public void doAttack(byte[] baseReq, String jsonString, IHttpService service, String[] currentTechnique, String attackType) {
 
         if(!jsonString.trim().startsWith("{")) {
             return;
@@ -104,7 +104,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
              String response = Utilities.getBody(baseResp.getReq().getResponse());
              if(hasSpacing(response)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyResponse = request(service, baseReq, MAX_RETRIES);
 
@@ -120,7 +120,7 @@ public class PrototypePollutionBodyScan extends Scan {
          } else if(attackType.equals("status")) {
              Resp invalidJsonResp = makeInvalidJsonRequest(service, baseReq);
              if(hasStatusCode(510, invalidJsonResp)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -142,7 +142,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
              String allow = Utilities.getHeader(optionsResp.getReq().getResponse(), "Allow").toLowerCase();
              if(!allow.contains("head") && allow.length() > 0) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -170,7 +170,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
              String accessControlExposeHeaders = Utilities.getHeader(baseResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
              if(accessControlExposeHeaders.contains(CANARY)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, attackType, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 

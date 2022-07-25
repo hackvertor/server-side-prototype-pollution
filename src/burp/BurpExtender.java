@@ -127,6 +127,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         SwingUtilities.invokeLater(new ConfigMenu());
 
         new PrototypePollutionBodyScan("Prototype pollution body scan");
+        new PrototypePollutionBodyDotScan("Prototype pollution body dot scan");
         new PrototypePollutionParamScan("Prototype pollution param scan");
         new AddPropertyScan("Add property scan");
         new PropertyParamScan("Property param scan");
