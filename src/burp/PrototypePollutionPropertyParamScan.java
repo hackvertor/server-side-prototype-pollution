@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class PropertyParamScan extends ParamScan {
+public class PrototypePollutionPropertyParamScan extends ParamScan {
 
     static final String DEFAULT_RESPONSE_REGEX = "native.{1,10}code";
     static public final String DEFAULT_VALID_PROPERTY = "constructor";
@@ -13,11 +13,11 @@ public class PropertyParamScan extends ParamScan {
 
     private final Integer MAX_RETRIES = 3;
 
-    public PropertyParamScan(String name) {
+    public PrototypePollutionPropertyParamScan(String name) {
         super(name);
-        scanSettings.register("vulnerable response regex", PropertyParamScan.DEFAULT_RESPONSE_REGEX, "Regex used to see if the server behaves differently");
-        scanSettings.register("valid property name", PropertyParamScan.DEFAULT_VALID_PROPERTY, "Valid property name that causes behaviour difference");
-        scanSettings.register("invalid property name", PropertyParamScan.DEFAULT_INVALID_PROPERTY, "Invalid property name that doesn't trigger different behaviour");
+        scanSettings.register("vulnerable response regex", PrototypePollutionPropertyParamScan.DEFAULT_RESPONSE_REGEX, "Regex used to see if the server behaves differently");
+        scanSettings.register("valid property name", PrototypePollutionPropertyParamScan.DEFAULT_VALID_PROPERTY, "Valid property name that causes behaviour difference");
+        scanSettings.register("invalid property name", PrototypePollutionPropertyParamScan.DEFAULT_INVALID_PROPERTY, "Invalid property name that doesn't trigger different behaviour");
     }
 
     @Override
