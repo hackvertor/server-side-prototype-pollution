@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 public class PrototypePollutionParamScan extends ParamScan {
-    private final String DETAIL = "This application is vulnerable to Server side prototype pollution";
-    private final String CANARY = "f1e3f7a9";
+    static final String DETAIL = "This application is vulnerable to Server side prototype pollution";
+    static final String CANARY = "f1e3f7a9";
     private final Integer MAX_RETRIES = 3;
 
     public PrototypePollutionParamScan(String name) {
@@ -21,15 +21,15 @@ public class PrototypePollutionParamScan extends ParamScan {
             case IScannerInsertionPoint.INS_PARAM_URL:
             case IScannerInsertionPoint.INS_PARAM_COOKIE:
             case IScannerInsertionPoint.INS_PARAM_JSON:
-                injectInsertionPoint(baseRequestResponse, insertionPoint);
+                injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionBodyScan.jsonTechniques);
                 break;
         }
         return null;
     }
 
-    private void injectInsertionPoint(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+    public void injectInsertionPoint(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, Map<String, String[]> techniques) {
         IHttpService service = baseRequestResponse.getHttpService();
-        for (Map.Entry<String, String[]> technique : PrototypePollutionBodyScan.jsonTechniques.entrySet()) {
+        for (Map.Entry<String, String[]> technique : techniques.entrySet()) {
             String attackType = technique.getKey();
             String nullifyInjection = technique.getValue()[2];
             String baseValue = insertionPoint.getBaseValue();
