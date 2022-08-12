@@ -1,9 +1,6 @@
 package burp;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -29,6 +26,9 @@ public class PrototypePollutionBodyScan extends Scan {
             });
             put("exposedHeaders", new String[]{
                     "__proto__","{\"exposedHeaders\":[\""+CANARY+"\"]}","{\"exposedHeaders\":null}"
+            });
+            put("blitz", new String[]{
+                    "__proto__","{\"__proto__\":{}}","{\"__proto__\":\"xyz\"}"
             });
         }
     };
@@ -58,7 +58,7 @@ public class PrototypePollutionBodyScan extends Scan {
         }
     }
 
-    private byte[] createRequest(String jsonString, byte[] baseReq, String[] currentTechnique, Boolean hasBody, Boolean nullify, IParameter param) {
+    private byte[] createRequestAndBuildJson(String jsonString, byte[] baseReq, String[] currentTechnique, Boolean hasBody, Boolean nullify, IParameter param) {
         JsonElement json = generateJson(jsonString, currentTechnique, nullify);
         byte[] request = baseReq.clone();
         if(hasBody) {
@@ -71,31 +71,148 @@ public class PrototypePollutionBodyScan extends Scan {
         return request;
     }
 
+    private byte[] createRequestFromJson(String jsonString, byte[] baseReq, Boolean hasBody, IParameter param) {
+        byte[] request = baseReq.clone();
+        if(hasBody) {
+            request = Utilities.setBody(request, jsonString);
+            request = Utilities.fixContentLength(request);
+        }
+        if(param != null) {
+            request = Utilities.helpers.updateParameter(request, createParameter(param.getName(), jsonString,param.getType()));
+        }
+        return request;
+    }
+
+    private ArrayList<String[]> getAttackAndNullifyJsonStrings(String jsonString, String[] currentTechnique) {
+        ArrayList<String[]> jsonList = new ArrayList<>();
+        JsonParser parser = new JsonParser();
+        try {
+            JsonElement json = parser.parse(jsonString);
+            traverseJsonGenerateJsonAttackAndNullifyStrings(json, currentTechnique, jsonList, json);
+            return jsonList;
+        } catch(JsonSyntaxException e) {
+            Utilities.err("Invalid JSON:" + e);
+            return null;
+        }
+    }
+    private JsonElement traverseJsonGenerateJsonAttackAndNullifyStrings(JsonElement jsonElement, String[] currentTechnique, ArrayList<String[]> jsonList, JsonElement originalJsonElement) {
+        if (jsonElement.isJsonNull()) {
+            return null;
+        }
+
+        if (jsonElement.isJsonPrimitive()) {
+            return null;
+        }
+
+        if (jsonElement.isJsonArray()) {
+            JsonArray jsonArray = jsonElement.getAsJsonArray();
+            if ( null != jsonArray) {
+                for (int i=0;i<jsonArray.size();i++) {
+                    jsonElement = traverseJsonGenerateJsonAttackAndNullifyStrings(jsonArray.get(i), currentTechnique, jsonList, originalJsonElement);
+                }
+                if(jsonElement != null) {
+                    return jsonElement;
+                }
+            }
+            return null;
+        }
+
+        if (jsonElement.isJsonObject()) {
+            Set<Map.Entry<String, JsonElement>> jsonObjectEntrySet = jsonElement.getAsJsonObject().entrySet();
+            for (Map.Entry<String, JsonElement> jsonEntry : jsonObjectEntrySet) {
+                String existingPropertyName = jsonEntry.getKey();
+                if(existingPropertyName.contains(".")) {
+                    for (int i = 0; i < currentTechnique.length; i += 3) {
+                        String techniquePropertyName = currentTechnique[i];
+                        String techniqueValue = currentTechnique[i + 1];
+                        String nullifyValue = currentTechnique[i + 2];
+                        JsonParser parser = new JsonParser();
+                        addJsonToList(jsonElement, existingPropertyName, techniquePropertyName, techniqueValue, jsonList, originalJsonElement, parser, nullifyValue, jsonEntry);
+                        if (jsonEntry.getValue().isJsonArray()) {
+                            if (jsonEntry.getValue().getAsJsonArray().size() == 1) {
+                                JsonElement oldValue = jsonEntry.getValue().getAsJsonArray().get(0);
+                                jsonEntry.getValue().getAsJsonArray().set(0, new JsonPrimitive(techniquePropertyName));
+                                String attack = originalJsonElement.toString();
+                                jsonEntry.getValue().getAsJsonArray().set(0, new JsonPrimitive("x.y"));
+                                String nullify = originalJsonElement.toString();
+                                jsonList.add(new String[] { attack, nullify });
+                                jsonEntry.getValue().getAsJsonArray().set(0, oldValue);
+                            } else {
+                                addJsonToList(jsonElement, existingPropertyName, techniquePropertyName, techniqueValue, jsonList, originalJsonElement, parser, nullifyValue, jsonEntry);
+                            }
+                        }
+                    }
+                }
+                jsonElement = traverseJsonGenerateJsonAttackAndNullifyStrings(jsonEntry.getValue(), currentTechnique, jsonList, originalJsonElement);
+            }
+        }
+        return null;
+    }
+
+    private void addJsonToList(JsonElement jsonElement, String existingPropertyName, String techniquePropertyName, String techniqueValue, ArrayList<String[]> jsonList, JsonElement originalJsonElement,  JsonParser parser, String nullifyValue, Map.Entry<String, JsonElement> jsonEntry) {
+        jsonElement.getAsJsonObject().remove(existingPropertyName);
+        jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(techniqueValue));
+        String attack = originalJsonElement.toString();
+        jsonElement.getAsJsonObject().remove(techniquePropertyName);
+        jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(nullifyValue));
+        String nullify = originalJsonElement.toString();
+        jsonElement.getAsJsonObject().remove(techniquePropertyName);
+        jsonElement.getAsJsonObject().add(existingPropertyName, jsonEntry.getValue());
+        jsonList.add(new String[] { attack, nullify });
+    }
+
     public void doAttack(byte[] baseReq, String jsonString, IHttpService service, String[] currentTechnique, String attackType) {
 
         if(!jsonString.trim().startsWith("{")) {
             return;
         }
 
-        JsonElement attackJson = generateJson(jsonString, currentTechnique, false);
+        if(attackType.equals("blitz")) {
+           ArrayList<String[]> jsonList = getAttackAndNullifyJsonStrings(jsonString, currentTechnique);
+           for (String[] json : jsonList) {
+               String attackJsonString = json[0];
+               String nullifyJsonString = json[1];
 
-        byte[] attackRequest = baseReq.clone();
-
-        if(attackJson != null && !attackJson.isJsonNull()) {
-            attackRequest = Utilities.setBody(attackRequest, attackJson.toString());
-            attackRequest = Utilities.fixContentLength(attackRequest);
-            doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null);
+               byte[] attackRequest = baseReq.clone();
+               attackRequest = Utilities.setBody(attackRequest, attackJsonString);
+               attackRequest = Utilities.fixContentLength(attackRequest);
+               doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null, nullifyJsonString);
+           }
+        } else {
+            JsonElement attackJson = generateJson(jsonString, currentTechnique, false);
+            byte[] attackRequest = baseReq.clone();
+            if (attackJson != null && !attackJson.isJsonNull()) {
+                attackRequest = Utilities.setBody(attackRequest, attackJson.toString());
+                attackRequest = Utilities.fixContentLength(attackRequest);
+                doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null, null);
+            }
         }
      }
 
-     private void doJsonAttack(byte[] baseReq, IHttpService service, byte[] attackRequest, String attackType, String jsonString, String[] currentTechnique, Boolean hasBody, IParameter param) {
+     private void doJsonAttack(byte[] baseReq, IHttpService service, byte[] attackRequest, String attackType, String jsonString, String[] currentTechnique, Boolean hasBody, IParameter param, String nullifiedJsonString) {
          Resp attackResp = request(service, attackRequest, MAX_RETRIES);
 
          if(attackResp.failed()) {
              return;
          }
+         if(attackType.equals("blitz")) {
+             String response = Utilities.getBody(attackResp.getReq().getResponse());
+             Boolean hasImmutable = responseHas(response, "Immutable.{1,10}prototype.{1,10}object");
+             Boolean hasStatusCode500 = hasStatusCode(500, attackResp);
+             if(hasImmutable || hasStatusCode500) {
+                 byte[] nullifyAttackRequest = createRequestFromJson(nullifiedJsonString, baseReq, hasBody, param);
+                 Resp nullifyResponse = request(service, nullifyAttackRequest, MAX_RETRIES);
 
-         if(attackType.equals("spacing")) {
+                 if(nullifyResponse.failed()) {
+                     return;
+                 }
+
+                 String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
+                 if((hasImmutable && !responseHas(nullifyResponseStr, "Immutable.{1,10}prototype.{1,10}object")) || (hasStatusCode500 && !hasStatusCode(500, nullifyResponse))) {
+                     reportIssue("PP JSON Blitz", DETAIL, "High", "Firm", ".", baseReq, attackResp, nullifyResponse);
+                 }
+             }
+         } else if(attackType.equals("spacing")) {
              Resp baseResp = request(service, baseReq, MAX_RETRIES);
 
              if(baseResp.failed()) {
@@ -104,7 +221,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
              String response = Utilities.getBody(baseResp.getReq().getResponse());
              if(hasSpacing(response)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyResponse = request(service, baseReq, MAX_RETRIES);
 
@@ -120,7 +237,7 @@ public class PrototypePollutionBodyScan extends Scan {
          } else if(attackType.equals("status")) {
              Resp invalidJsonResp = makeInvalidJsonRequest(service, baseReq);
              if(hasStatusCode(510, invalidJsonResp)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -142,7 +259,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
              String allow = Utilities.getHeader(optionsResp.getReq().getResponse(), "Allow").toLowerCase();
              if(!allow.contains("head") && allow.length() > 0) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -170,7 +287,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
              String accessControlExposeHeaders = Utilities.getHeader(baseResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
              if(accessControlExposeHeaders.contains(CANARY)) {
-                 byte[] nullifyAttackRequest = createRequest(jsonString, baseReq, currentTechnique, hasBody, true, param);
+                 byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -207,6 +324,12 @@ public class PrototypePollutionBodyScan extends Scan {
         String responseStart = response.substring(0,response.length() > 20 ? 20 : response.length());
         Pattern regex = Pattern.compile("^\\s*[{\\[]\\s+", Pattern.CASE_INSENSITIVE);
         Matcher matcher = regex.matcher(responseStart);
+        return matcher.find();
+    }
+
+    static Boolean responseHas(String response, String pattern) {
+        Pattern regex = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = regex.matcher(response);
         return matcher.find();
     }
 

@@ -20,6 +20,9 @@ public class PrototypePollutionBodyDotScan extends PrototypePollutionBodyScan {
             put("exposedHeaders", new String[]{
                     "__proto__.exposedHeaders","[\""+CANARY+"\"]","null"
             });
+            put("blitz", new String[]{
+                    "__proto__.__proto__","{}","xyz"
+            });
         }
     };
     PrototypePollutionBodyDotScan(String name) {

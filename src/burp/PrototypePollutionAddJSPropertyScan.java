@@ -2,15 +2,15 @@ package burp;
 
 import java.util.List;
 
-public class PrototypePollutionAddPropertyScan extends Scan {
+public class PrototypePollutionAddJSPropertyScan extends Scan {
 
     private final Integer MAX_RETRIES = 3;
 
-    PrototypePollutionAddPropertyScan(String name) {
+    PrototypePollutionAddJSPropertyScan(String name) {
         super(name);
-        scanSettings.register("vulnerable response regex", PrototypePollutionPropertyParamScan.DEFAULT_RESPONSE_REGEX, "Regex used to see if the server behaves differently");
-        scanSettings.register("valid property name", PrototypePollutionPropertyParamScan.DEFAULT_VALID_PROPERTY, "Valid property name that causes behaviour difference");
-        scanSettings.register("invalid property name", PrototypePollutionPropertyParamScan.DEFAULT_INVALID_PROPERTY, "Invalid property name that doesn't trigger different behaviour");
+        scanSettings.register("vulnerable response regex", PrototypePollutionJSPropertyParamScan.DEFAULT_RESPONSE_REGEX, "Regex used to see if the server behaves differently");
+        scanSettings.register("valid property name", PrototypePollutionJSPropertyParamScan.DEFAULT_VALID_PROPERTY, "Valid property name that causes behaviour difference");
+        scanSettings.register("invalid property name", PrototypePollutionJSPropertyParamScan.DEFAULT_INVALID_PROPERTY, "Invalid property name that doesn't trigger different behaviour");
     }
 
     @Override
@@ -39,7 +39,7 @@ public class PrototypePollutionAddPropertyScan extends Scan {
         }
 
         Resp attackResp = request(service, attackReq, MAX_RETRIES);
-        if(PrototypePollutionPropertyParamScan.regexResponse(attackResp)) {
+        if(PrototypePollutionJSPropertyParamScan.regexResponse(attackResp)) {
             byte[] nullifyReq;
             if(insertionPointType == IScannerInsertionPoint.INS_PARAM_JSON) {
                 nullifyReq = PrototypePollutionBodyScan.addJsonBodyParameter(baseReq, invalidProperty, invalidProperty);
@@ -51,9 +51,9 @@ public class PrototypePollutionAddPropertyScan extends Scan {
                 nullifyReq = Utilities.helpers.addParameter(baseReq, nullifyParameter);
             }
             Resp nullifyResp = request(service, nullifyReq, MAX_RETRIES);
-            if(!PrototypePollutionPropertyParamScan.regexResponse(nullifyResp)) {
-                IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionPropertyParamScan.getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), PrototypePollutionPropertyParamScan.getRegexMarkerPositions(attackResp, regex));
-                IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), PrototypePollutionPropertyParamScan.getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
+            if(!PrototypePollutionJSPropertyParamScan.regexResponse(nullifyResp)) {
+                IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(attackResp, regex));
+                IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
                 PrototypePollutionBodyScan.reportIssue("Add property scan using "+validProperty, "An added parameter "+validProperty+" was added to the request and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseReq, new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
             }
         }

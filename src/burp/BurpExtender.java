@@ -132,8 +132,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new PrototypePollutionParamScan("Prototype pollution param scan");
         new PrototypePollutionParamDotScan("Prototype pollution param dot scan");
         new PrototypePollutionParamSquareScan("Prototype pollution param square scan");
-        new PrototypePollutionAddPropertyScan("Prototype pollution add property scan");
-        new PrototypePollutionPropertyParamScan("Prototype pollution property param scan");
+        new PrototypePollutionAddJSPropertyScan("Prototype pollution add js property scan");
+        new PrototypePollutionJSPropertyParamScan("Prototype pollution js property param scan");
 
         new HeaderPoison("Header poison");
         new PortDOS("port-DoS");
