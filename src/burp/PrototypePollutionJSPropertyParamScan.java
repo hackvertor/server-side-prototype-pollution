@@ -7,9 +7,9 @@ import java.util.regex.Pattern;
 
 public class PrototypePollutionJSPropertyParamScan extends ParamScan {
 
-    static final String DEFAULT_RESPONSE_REGEX = "native.{1,10}code";
-    static public final String DEFAULT_VALID_PROPERTY = "constructor";
-    static public final String DEFAULT_INVALID_PROPERTY = "constxructor";
+    static final String DEFAULT_RESPONSE_REGEX = "Immutable.{1,10}prototype.{1,10}object";
+    static public final String DEFAULT_VALID_PROPERTY = "__proto__.__proto___";
+    static public final String DEFAULT_INVALID_PROPERTY = "x.y";
 
     private final Integer MAX_RETRIES = 0;
 
