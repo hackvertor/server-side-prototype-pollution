@@ -4,7 +4,7 @@ import java.util.List;
 
 public class PrototypePollutionAddJSPropertyScan extends Scan {
 
-    private final Integer MAX_RETRIES = 3;
+    private final Integer MAX_RETRIES = 0;
 
     PrototypePollutionAddJSPropertyScan(String name) {
         super(name);
