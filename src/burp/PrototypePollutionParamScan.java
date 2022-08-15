@@ -8,7 +8,7 @@ import java.util.Map;
 public class PrototypePollutionParamScan extends ParamScan {
     static final String DETAIL = "This application is vulnerable to Server side prototype pollution";
     static final String CANARY = "f1e3f7a9";
-    private final Integer MAX_RETRIES = 0;
+    private final Integer MAX_RETRIES = 1;
 
     public PrototypePollutionParamScan(String name) {
         super(name);

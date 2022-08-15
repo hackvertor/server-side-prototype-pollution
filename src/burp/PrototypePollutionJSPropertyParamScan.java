@@ -11,7 +11,7 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
     static public final String DEFAULT_VALID_PROPERTY = "__proto__.__proto___";
     static public final String DEFAULT_INVALID_PROPERTY = "x.y";
 
-    private final Integer MAX_RETRIES = 0;
+    private final Integer MAX_RETRIES = 1;
 
     public PrototypePollutionJSPropertyParamScan(String name) {
         super(name);
