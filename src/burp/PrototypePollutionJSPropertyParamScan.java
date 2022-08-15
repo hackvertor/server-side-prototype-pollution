@@ -8,31 +8,41 @@ import java.util.regex.Pattern;
 public class PrototypePollutionJSPropertyParamScan extends ParamScan {
 
     static final String DEFAULT_RESPONSE_REGEX = "Immutable.{1,10}prototype.{1,10}object";
-    static public final String DEFAULT_VALID_PROPERTY = "__proto__.__proto___";
-    static public final String DEFAULT_INVALID_PROPERTY = "x.y";
-
-    private final Integer MAX_RETRIES = 1;
+    static public final String DEFAULT_VALID_PROPERTY = "__proto__.__proto__";
+    static public final String DEFAULT_VALID_PROPERTY_VALUE = "{}";
+    static public final String DEFAULT_INVALID_PROPERTY = "__proto__.y";
+    static public final String DEFAULT_INVALID_PROPERTY_VALUE = "123";
 
     public PrototypePollutionJSPropertyParamScan(String name) {
         super(name);
-        scanSettings.register("vulnerable response regex", PrototypePollutionJSPropertyParamScan.DEFAULT_RESPONSE_REGEX, "Regex used to see if the server behaves differently");
-        scanSettings.register("valid property name", PrototypePollutionJSPropertyParamScan.DEFAULT_VALID_PROPERTY, "Valid property name that causes behaviour difference");
-        scanSettings.register("invalid property name", PrototypePollutionJSPropertyParamScan.DEFAULT_INVALID_PROPERTY, "Invalid property name that doesn't trigger different behaviour");
+        scanSettings.register("vulnerable response regex", DEFAULT_RESPONSE_REGEX, "Regex used to see if the server behaves differently");
+        scanSettings.register("valid property name", DEFAULT_VALID_PROPERTY, "Valid property name that causes behaviour difference");
+        scanSettings.register("valid property value", DEFAULT_VALID_PROPERTY_VALUE, "Valid property value that causes behaviour difference");
+        scanSettings.register("invalid property name", DEFAULT_INVALID_PROPERTY, "Invalid property name that doesn't trigger different behaviour");
+        scanSettings.register("invalid property value", DEFAULT_INVALID_PROPERTY_VALUE, "Invalid property value that doesn't trigger different behaviour");
     }
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-        IHttpService service = baseRequestResponse.getHttpService();
 
+        String validProperty = Utilities.globalSettings.getString("valid property name");
+        String invalidProperty = Utilities.globalSettings.getString("invalid property name");
+        byte[] attackReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(validProperty).getBytes());
+        byte[] nullifyReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidProperty).getBytes());
+        doAttack(baseRequestResponse, insertionPoint, attackReq, nullifyReq);
+
+        return null;
+    }
+
+    void doAttack(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, byte[] attackReq, byte[] nullifyReq) {
+        IHttpService service = baseRequestResponse.getHttpService();
         String validProperty = Utilities.globalSettings.getString("valid property name");
         String invalidProperty = Utilities.globalSettings.getString("invalid property name");
         String regex = Utilities.globalSettings.getString("vulnerable response regex");
 
-        byte[] attackReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(validProperty).getBytes());
-        Resp attackResp = request(service, attackReq, MAX_RETRIES);
+        Resp attackResp = request(service, attackReq, PrototypePollutionBodyScan.MAX_RETRIES);
         if(regexResponse(attackResp)) {
-            byte[] nullifyReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidProperty).getBytes());
-            Resp nullifyResp = request(service, nullifyReq, MAX_RETRIES);
+            Resp nullifyResp = request(service, nullifyReq, PrototypePollutionBodyScan.MAX_RETRIES);
             if(!regexResponse(nullifyResp)) {
                 IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), getRegexMarkerPositions(attackResp, regex));
                 IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
@@ -40,7 +50,6 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
             }
         }
 
-        return null;
     }
 
     static List<int[]> getRegexMarkerPositions(Resp response, String regex) {

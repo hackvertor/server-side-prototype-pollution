@@ -21,7 +21,7 @@ public class PrototypePollutionBodySquareScan extends PrototypePollutionBodyScan
                     "__proto__[exposedHeaders]","[\""+CANARY+"\"]","null"
             });
             put("blitz", new String[]{
-                    "__proto__[__proto__]","{}","null"
+                    "__proto__[__proto__]","{}","\"xyz\""
             });
         }
     };

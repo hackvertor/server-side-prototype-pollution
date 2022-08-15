@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 public class PrototypePollutionParamScan extends ParamScan {
-    static final String DETAIL = "This application is vulnerable to Server side prototype pollution";
-    static final String CANARY = "f1e3f7a9";
-    private final Integer MAX_RETRIES = 1;
 
     public PrototypePollutionParamScan(String name) {
         super(name);
@@ -16,14 +13,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-        switch(insertionPoint.getInsertionPointType()) {
-            case IScannerInsertionPoint.INS_PARAM_BODY:
-            case IScannerInsertionPoint.INS_PARAM_URL:
-            case IScannerInsertionPoint.INS_PARAM_COOKIE:
-            case IScannerInsertionPoint.INS_PARAM_JSON:
-                injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionBodyScan.jsonTechniques);
-                break;
-        }
+        injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionBodyScan.jsonTechniques);
         return null;
     }
 
@@ -50,14 +40,14 @@ public class PrototypePollutionParamScan extends ParamScan {
                 continue;
             }
 
-            Resp attackResp = request(service, attackReq, MAX_RETRIES);
+            Resp attackResp = request(service, attackReq, PrototypePollutionBodyScan.MAX_RETRIES);
 
             if (attackResp.failed()) {
                 continue;
             }
             if(attackType.equals("blitz")) {
                 byte[] req = baseRequestResponse.getRequest();
-                Resp baseResp = request(service, req, MAX_RETRIES);
+                Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);
                 String response = Utilities.getBody(attackResp.getReq().getResponse());
                 Boolean hasImmutable = PrototypePollutionBodyScan.responseHas(response, "Immutable.{1,10}prototype.{1,10}object");
                 Boolean hasStatusCode500 = PrototypePollutionBodyScan.hasStatusCode(500, attackResp);
@@ -70,8 +60,8 @@ public class PrototypePollutionParamScan extends ParamScan {
                         JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), true);
                         nullifyAttackRequest = Utilities.helpers.updateParameter(baseReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(),insertionPoint.getInsertionPointType()));
                     }
-                    request(service, nullifyAttackRequest, MAX_RETRIES);
-                    Resp nullifyResponse = request(service, baseRequestResponse.getRequest(), MAX_RETRIES);
+                    request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
+                    Resp nullifyResponse = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
                     if(nullifyResponse.failed()) {
                         continue;
@@ -79,7 +69,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                     if((hasImmutable && !PrototypePollutionBodyScan.responseHas(nullifyResponseStr, "Immutable.{1,10}prototype.{1,10}object")) || (hasStatusCode500 && !PrototypePollutionBodyScan.hasStatusCode(500, nullifyResponse))) {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON Blitz", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
+                        PrototypePollutionBodyScan.reportIssue("PP JSON Blitz", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
                     }
                 }
             } else if(attackType.equals("spacing")) {
@@ -90,7 +80,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                 } else {
                     req = baseRequestResponse.getRequest();
                 }
-                Resp baseResp = request(service, req, MAX_RETRIES);
+                Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);
                 String response = Utilities.getBody(baseResp.getReq().getResponse());
                 if(PrototypePollutionBodyScan.hasSpacing(response)) {
                     byte[] nullifyAttackRequest;
@@ -101,8 +91,8 @@ public class PrototypePollutionParamScan extends ParamScan {
                         JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), true);
                         nullifyAttackRequest = Utilities.helpers.updateParameter(baseReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(),insertionPoint.getInsertionPointType()));
                     }
-                    request(service, nullifyAttackRequest, MAX_RETRIES);
-                    Resp nullifyResponse = request(service, baseRequestResponse.getRequest(), MAX_RETRIES);
+                    request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
+                    Resp nullifyResponse = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
                     if(nullifyResponse.failed()) {
                         continue;
@@ -110,7 +100,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                     if(!PrototypePollutionBodyScan.hasSpacing(nullifyResponseStr)) {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON spacing", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
+                        PrototypePollutionBodyScan.reportIssue("PP JSON spacing", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
                     }
                 }
             } else if(attackType.equals("status")) {
@@ -124,7 +114,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                         JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), true);
                         nullifyAttackRequest = Utilities.helpers.updateParameter(baseReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(),insertionPoint.getInsertionPointType()));
                     }
-                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
+                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
 
                     if(nullifyAttackRequestResp.failed()) {
                         continue;
@@ -132,11 +122,11 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     Resp invalidJsonNullified = makeInvalidJsonRequest(service, insertionPoint);
                     if(!PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonNullified)) {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
+                        PrototypePollutionBodyScan.reportIssue("PP JSON status", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                     }
                 }
             } else if(attackType.equals("options")) {
-                Resp optionsResp = request(service, Utilities.setMethod(baseRequestResponse.getRequest(), "OPTIONS"), MAX_RETRIES);
+                Resp optionsResp = request(service, Utilities.setMethod(baseRequestResponse.getRequest(), "OPTIONS"), PrototypePollutionBodyScan.MAX_RETRIES);
 
                 if(optionsResp.failed()) {
                     continue;
@@ -152,14 +142,14 @@ public class PrototypePollutionParamScan extends ParamScan {
                         JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), true);
                         nullifyAttackRequest = Utilities.helpers.updateParameter(baseReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(),insertionPoint.getInsertionPointType()));
                     }
-                    request(service, nullifyAttackRequest, MAX_RETRIES);
-                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
+                    request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
+                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
 
                     if(nullifyAttackRequestResp.failed()) {
                         continue;
                     }
 
-                    Resp nullifyOptionsResp = request(service, Utilities.setMethod(baseRequestResponse.getRequest(), "OPTIONS"), MAX_RETRIES);
+                    Resp nullifyOptionsResp = request(service, Utilities.setMethod(baseRequestResponse.getRequest(), "OPTIONS"), PrototypePollutionBodyScan.MAX_RETRIES);
 
                     if(nullifyOptionsResp.failed()) {
                         continue;
@@ -167,18 +157,18 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                     if(nullifiedAllow.contains("head")) {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON options", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                        PrototypePollutionBodyScan.reportIssue("PP JSON options", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                     }
                 }
             } else if(attackType.equals("exposedHeaders")) {
-                Resp baseResp = request(service, baseRequestResponse.getRequest(), MAX_RETRIES);
+                Resp baseResp = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
                 if(baseResp.failed()) {
                     continue;
                 }
 
                 String accessControlExposeHeaders = Utilities.getHeader(baseResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
-                if(accessControlExposeHeaders.contains(CANARY)) {
+                if(accessControlExposeHeaders.contains(PrototypePollutionBodyScan.CANARY)) {
                     byte[] nullifyAttackRequest;
                     if(insertionPoint.getInsertionPointType() == IScannerInsertionPoint.INS_PARAM_JSON) {
                         nullifyAttackRequest = insertionPoint.buildRequest(nullifyInjection.getBytes());
@@ -187,22 +177,22 @@ public class PrototypePollutionParamScan extends ParamScan {
                         JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), true);
                         nullifyAttackRequest = Utilities.helpers.updateParameter(baseReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(),insertionPoint.getInsertionPointType()));
                     }
-                    request(service, nullifyAttackRequest, MAX_RETRIES);
-                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
+                    request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
+                    Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
 
                     if(nullifyAttackRequestResp.failed()) {
                         continue;
                     }
 
-                    Resp nullifyResp = request(service, baseRequestResponse.getRequest(), MAX_RETRIES);
+                    Resp nullifyResp = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
                     if(nullifyResp.failed()) {
                         continue;
                     }
 
                     String nullifiedAccessControlExposeHeaders = Utilities.getHeader(nullifyResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
-                    if(!nullifiedAccessControlExposeHeaders.contains(CANARY)) {
-                        PrototypePollutionBodyScan.reportIssue("PP JSON exposedHeaders", DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
+                    if(!nullifiedAccessControlExposeHeaders.contains(PrototypePollutionBodyScan.CANARY)) {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON exposedHeaders", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
                     }
                 }
             }
@@ -217,6 +207,6 @@ public class PrototypePollutionParamScan extends ParamScan {
         } else {
             invalidJsonAttackRequest = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidJson).getBytes());
         }
-        return request(service, invalidJsonAttackRequest, MAX_RETRIES);
+        return request(service, invalidJsonAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
     }
 }

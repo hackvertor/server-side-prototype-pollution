@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 
 public class PrototypePollutionBodyScan extends Scan {
 
-    private final String DETAIL = "This application is vulnerable to Server side prototype pollution";
+    static final String DETAIL = "This application is vulnerable to Server side prototype pollution";
     static final String CANARY = "f1e3f7a9";
-    private final Integer MAX_RETRIES = 1;
+    static final Integer MAX_RETRIES = 1;
 
     static final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
     {
@@ -83,7 +83,7 @@ public class PrototypePollutionBodyScan extends Scan {
         return request;
     }
 
-    private ArrayList<String[]> getAttackAndNullifyJsonStrings(String jsonString, String[] currentTechnique) {
+    static ArrayList<String[]> getAttackAndNullifyJsonStrings(String jsonString, String[] currentTechnique) {
         ArrayList<String[]> jsonList = new ArrayList<>();
         JsonParser parser = new JsonParser();
         try {
@@ -95,7 +95,7 @@ public class PrototypePollutionBodyScan extends Scan {
             return null;
         }
     }
-    private JsonElement traverseJsonGenerateJsonAttackAndNullifyStrings(JsonElement jsonElement, String[] currentTechnique, ArrayList<String[]> jsonList, JsonElement originalJsonElement) {
+    private static JsonElement traverseJsonGenerateJsonAttackAndNullifyStrings(JsonElement jsonElement, String[] currentTechnique, ArrayList<String[]> jsonList, JsonElement originalJsonElement) {
         if (jsonElement.isJsonNull()) {
             return null;
         }
@@ -133,7 +133,7 @@ public class PrototypePollutionBodyScan extends Scan {
                                 JsonElement oldValue = jsonEntry.getValue().getAsJsonArray().get(0);
                                 jsonEntry.getValue().getAsJsonArray().set(0, new JsonPrimitive(techniquePropertyName));
                                 String attack = originalJsonElement.toString();
-                                jsonEntry.getValue().getAsJsonArray().set(0, new JsonPrimitive("x.y"));
+                                jsonEntry.getValue().getAsJsonArray().set(0, parser.parse(nullifyValue));
                                 String nullify = originalJsonElement.toString();
                                 jsonList.add(new String[] { attack, nullify });
                                 jsonEntry.getValue().getAsJsonArray().set(0, oldValue);
@@ -149,7 +149,7 @@ public class PrototypePollutionBodyScan extends Scan {
         return null;
     }
 
-    private void addJsonToList(JsonElement jsonElement, String existingPropertyName, String techniquePropertyName, String techniqueValue, ArrayList<String[]> jsonList, JsonElement originalJsonElement,  JsonParser parser, String nullifyValue, Map.Entry<String, JsonElement> jsonEntry) {
+    private static void addJsonToList(JsonElement jsonElement, String existingPropertyName, String techniquePropertyName, String techniqueValue, ArrayList<String[]> jsonList, JsonElement originalJsonElement, JsonParser parser, String nullifyValue, Map.Entry<String, JsonElement> jsonEntry) {
         jsonElement.getAsJsonObject().remove(existingPropertyName);
         jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(techniqueValue));
         String attack = originalJsonElement.toString();
