@@ -41,7 +41,9 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
             byte[] nullifyRequest = baseReq.clone();
             nullifyRequest = Utilities.setBody(nullifyRequest, nullifyJsonString);
             nullifyRequest = Utilities.fixContentLength(nullifyRequest);
-            doAttack(baseReq, service, attackRequest, nullifyRequest);
+            if(attackRequest != null && nullifyRequest != null) {
+                doAttack(baseReq, service, attackRequest, nullifyRequest);
+            }
         }
     }
 
