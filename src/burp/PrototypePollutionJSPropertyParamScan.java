@@ -30,8 +30,9 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
         byte[] attackReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(validProperty).getBytes());
         byte[] nullifyReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidProperty).getBytes());
         Utilities.out("Running JS property param scan");
-        doAttack(baseRequestResponse, insertionPoint, attackReq, nullifyReq);
-
+        if(attackReq != null && nullifyReq != null) {
+            doAttack(baseRequestResponse, insertionPoint, attackReq, nullifyReq);
+        }
         return null;
     }
 

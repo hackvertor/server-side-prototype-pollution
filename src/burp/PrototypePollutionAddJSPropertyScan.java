@@ -59,7 +59,9 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
             attackReq = Utilities.helpers.addParameter(baseReq, parameter);
             IParameter nullifyParameter = Utilities.helpers.buildParameter(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidProperty), PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidPropertyValue), insertionPointType);
             byte[] nullifyReq = Utilities.helpers.addParameter(baseReq, nullifyParameter);
-            doAttack(baseReq, service, attackReq, nullifyReq);
+            if(attackReq != null && nullifyReq != null) {
+                doAttack(baseReq, service, attackReq, nullifyReq);
+            }
         }
     }
 
