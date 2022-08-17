@@ -30,6 +30,7 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
         String jsonString = Utilities.getBody(baseReq);
         String[] currentTechnique = new String[]{validProperty,validPropertyValue,invalidPropertyValue};
         ArrayList<String[]> jsonList = PrototypePollutionBodyScan.getAttackAndNullifyJsonStrings(jsonString, currentTechnique, propertyRegex);
+        Utilities.out("Running add JS property scan");
         for (String[] json : jsonList) {
             String attackJsonString = json[0];
             String nullifyJsonString = json[1];

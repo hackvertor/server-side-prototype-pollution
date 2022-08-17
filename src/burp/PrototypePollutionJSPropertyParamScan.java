@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class PrototypePollutionJSPropertyParamScan extends ParamScan {
 
-    static final String DEFAULT_RESPONSE_REGEX = "Immutable.{1,10}prototype.{1,10}object";
+    static final String DEFAULT_RESPONSE_REGEX = "(?:Immutable.{1,10}prototype.{1,10}object|type.{1,10}error)";
     static public final String DEFAULT_VALID_PROPERTY = "__proto__.__proto__";
     static public final String DEFAULT_VALID_PROPERTY_VALUE = "{}";
     static public final String DEFAULT_INVALID_PROPERTY = "__proto__.y";
@@ -29,6 +29,7 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
         String invalidProperty = Utilities.globalSettings.getString("invalid property name");
         byte[] attackReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(validProperty).getBytes());
         byte[] nullifyReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidProperty).getBytes());
+        Utilities.out("Running JS property param scan");
         doAttack(baseRequestResponse, insertionPoint, attackReq, nullifyReq);
 
         return null;
