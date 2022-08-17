@@ -83,19 +83,78 @@ public class PrototypePollutionBodyScan extends Scan {
         return request;
     }
 
-    static ArrayList<String[]> getAttackAndNullifyJsonStrings(String jsonString, String[] currentTechnique) {
+    static ArrayList<String[]> getAttackAndNullifyJsonStrings(String jsonString, String[] currentTechnique, String propertyRegex) {
         ArrayList<String[]> jsonList = new ArrayList<>();
-        JsonParser parser = new JsonParser();
         try {
-            JsonElement json = parser.parse(jsonString);
-            traverseJsonGenerateJsonAttackAndNullifyStrings(json, currentTechnique, jsonList, json);
+            JsonElement json = new JsonParser().parse(jsonString);
+            if(json.isJsonArray() || json.isJsonObject()) {
+                traverseJsonGenerateJsonAttackAndNullifyStrings(json, currentTechnique, jsonList, json, propertyRegex);
+            }
             return jsonList;
         } catch(JsonSyntaxException e) {
             Utilities.err("Invalid JSON:" + e);
             return null;
         }
     }
-    private static JsonElement traverseJsonGenerateJsonAttackAndNullifyStrings(JsonElement jsonElement, String[] currentTechnique, ArrayList<String[]> jsonList, JsonElement originalJsonElement) {
+
+    static String processJsonElement(JsonElement e, JsonElement targetObject, String existingPropertyName, String newPropertyName, JsonElement value) {
+        String output = "";
+        if (e.isJsonArray()) {
+            output += processJsonArray(e.getAsJsonArray(), targetObject, existingPropertyName, newPropertyName, value);
+        } else if (e.isJsonNull()) {
+            output += processJsonNull(e.getAsJsonNull());
+        } else if (e.isJsonObject()) {
+            output += processJsonObject(e.getAsJsonObject(), targetObject, existingPropertyName, newPropertyName, value);
+        } else if (e.isJsonPrimitive()) {
+            output += processJsonPrimitive(e.getAsJsonPrimitive());
+        }
+        return output;
+    }
+
+    static String processJsonArray(JsonArray a, JsonElement targetObject, String existingPropertyName, String newPropertyName, JsonElement value) {
+        String output = "[";
+        for (JsonElement e : a) {
+            output += processJsonElement(e, targetObject, existingPropertyName, newPropertyName, value);
+            output += ",";
+        }
+        output = removeLastChar(output);
+        output += "]";
+        return output;
+    }
+
+    static String processJsonNull(JsonNull n) {
+        return "null";
+    }
+
+    static String processJsonObject(JsonObject o, JsonElement targetObject, String existingPropertyName, String newPropertyName, JsonElement newValue) {
+        String output = "{";
+        Set<Map.Entry<String, JsonElement>> members = o.entrySet();
+        for (Map.Entry<String, JsonElement> element : members) {
+            if(targetObject.getAsJsonObject() == o && element.getKey().equals(existingPropertyName)) {
+                output += new JsonPrimitive(newPropertyName) + ":" + newValue;
+            } else {
+                output += new JsonPrimitive(element.getKey()) + ":" + processJsonElement(element.getValue(), targetObject, existingPropertyName, newPropertyName, newValue);
+            }
+            output += ",";
+        }
+        output = removeLastChar(output);
+        output += "}";
+        return output;
+    }
+
+    static String processJsonPrimitive(JsonPrimitive p) {
+        return p.toString();
+    }
+
+    public static String removeLastChar(String s) {
+        return (s == null || s.length() == 0) ? null : (s.substring(0, s.length() - 1));
+    }
+
+    static String generateJsonString(JsonElement fullObject, JsonElement targetObject, String existingPropertyName, String newPropertyName, JsonElement value) {
+        return processJsonElement(fullObject, targetObject, existingPropertyName, newPropertyName, value);
+    }
+
+    static JsonElement traverseJsonGenerateJsonAttackAndNullifyStrings(JsonElement jsonElement, String[] currentTechnique, ArrayList<String[]> jsonList, JsonElement fullJsonElement, String propertyRegex) {
         if (jsonElement.isJsonNull()) {
             return null;
         }
@@ -108,7 +167,7 @@ public class PrototypePollutionBodyScan extends Scan {
             JsonArray jsonArray = jsonElement.getAsJsonArray();
             if ( null != jsonArray) {
                 for (int i=0;i<jsonArray.size();i++) {
-                    jsonElement = traverseJsonGenerateJsonAttackAndNullifyStrings(jsonArray.get(i), currentTechnique, jsonList, originalJsonElement);
+                    jsonElement = traverseJsonGenerateJsonAttackAndNullifyStrings(jsonArray.get(i), currentTechnique, jsonList, fullJsonElement, propertyRegex);
                 }
                 if(jsonElement != null) {
                     return jsonElement;
@@ -118,47 +177,42 @@ public class PrototypePollutionBodyScan extends Scan {
         }
 
         if (jsonElement.isJsonObject()) {
+            JsonParser parser = new JsonParser();
             Set<Map.Entry<String, JsonElement>> jsonObjectEntrySet = jsonElement.getAsJsonObject().entrySet();
             for (Map.Entry<String, JsonElement> jsonEntry : jsonObjectEntrySet) {
+                JsonElement originalJsonObject = jsonEntry.getValue();
                 String existingPropertyName = jsonEntry.getKey();
-                if(existingPropertyName.contains(".")) {
+                Pattern regex = Pattern.compile(propertyRegex, Pattern.CASE_INSENSITIVE);
+                Matcher matcher = regex.matcher(existingPropertyName);
+                if( matcher.find() ) {
                     for (int i = 0; i < currentTechnique.length; i += 3) {
                         String techniquePropertyName = currentTechnique[i];
                         String techniqueValue = currentTechnique[i + 1];
                         String nullifyValue = currentTechnique[i + 2];
-                        JsonParser parser = new JsonParser();
-                        addJsonToList(jsonElement, existingPropertyName, techniquePropertyName, techniqueValue, jsonList, originalJsonElement, parser, nullifyValue, jsonEntry);
+                        jsonList.add(new String[]{generateJsonString(fullJsonElement, jsonElement, existingPropertyName, techniquePropertyName, parser.parse(techniqueValue)),generateJsonString(fullJsonElement, jsonElement, existingPropertyName, techniquePropertyName, parser.parse(nullifyValue))});
                         if (jsonEntry.getValue().isJsonArray()) {
-                            if (jsonEntry.getValue().getAsJsonArray().size() == 1) {
-                                JsonElement oldValue = jsonEntry.getValue().getAsJsonArray().get(0);
-                                jsonEntry.getValue().getAsJsonArray().set(0, new JsonPrimitive(techniquePropertyName));
-                                String attack = originalJsonElement.toString();
-                                jsonEntry.getValue().getAsJsonArray().set(0, parser.parse(nullifyValue));
-                                String nullify = originalJsonElement.toString();
-                                jsonList.add(new String[] { attack, nullify });
-                                jsonEntry.getValue().getAsJsonArray().set(0, oldValue);
-                            } else {
-                                addJsonToList(jsonElement, existingPropertyName, techniquePropertyName, techniqueValue, jsonList, originalJsonElement, parser, nullifyValue, jsonEntry);
+                            JsonArray jsonArray = jsonEntry.getValue().getAsJsonArray();
+                            if (jsonArray.size() == 1) {
+                                JsonElement originalValue = jsonArray.get(0);
+                                modifyArray(jsonArray, new JsonPrimitive(techniquePropertyName));
+                                String attackArray = fullJsonElement.toString();
+                                modifyArray(jsonArray, parser.parse(nullifyValue));
+                                String nullifyArray = fullJsonElement.toString();
+                                jsonList.add(new String[] { attackArray, nullifyArray });
+                                modifyArray(originalJsonObject, originalValue);
                             }
                         }
                     }
                 }
-                jsonElement = traverseJsonGenerateJsonAttackAndNullifyStrings(jsonEntry.getValue(), currentTechnique, jsonList, originalJsonElement);
+                traverseJsonGenerateJsonAttackAndNullifyStrings(jsonEntry.getValue(), currentTechnique, jsonList, fullJsonElement, propertyRegex);
             }
         }
         return null;
     }
 
-    private static void addJsonToList(JsonElement jsonElement, String existingPropertyName, String techniquePropertyName, String techniqueValue, ArrayList<String[]> jsonList, JsonElement originalJsonElement, JsonParser parser, String nullifyValue, Map.Entry<String, JsonElement> jsonEntry) {
-        jsonElement.getAsJsonObject().remove(existingPropertyName);
-        jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(techniqueValue));
-        String attack = originalJsonElement.toString();
-        jsonElement.getAsJsonObject().remove(techniquePropertyName);
-        jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(nullifyValue));
-        String nullify = originalJsonElement.toString();
-        jsonElement.getAsJsonObject().remove(techniquePropertyName);
-        jsonElement.getAsJsonObject().add(existingPropertyName, jsonEntry.getValue());
-        jsonList.add(new String[] { attack, nullify });
+    private static void modifyArray(JsonElement jsonElement, JsonElement newValue) {
+        JsonArray jsonArray = jsonElement.getAsJsonArray();
+        jsonArray.set(0, newValue);
     }
 
     public void doAttack(byte[] baseReq, String jsonString, IHttpService service, String[] currentTechnique, String attackType) {
@@ -168,7 +222,7 @@ public class PrototypePollutionBodyScan extends Scan {
         }
 
         if(attackType.equals("blitz")) {
-           ArrayList<String[]> jsonList = getAttackAndNullifyJsonStrings(jsonString, currentTechnique);
+           ArrayList<String[]> jsonList = getAttackAndNullifyJsonStrings(jsonString, currentTechnique, "[.]");
            for (String[] json : jsonList) {
                String attackJsonString = json[0];
                String nullifyJsonString = json[1];

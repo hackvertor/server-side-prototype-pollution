@@ -23,13 +23,13 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
         return null;
     }
 
-    void scanJsonBody(byte[] baseReq, IHttpService service) {
+    void scanJsonBody(byte[] baseReq, IHttpService service, String propertyRegex) {
         String validProperty = Utilities.globalSettings.getString("valid property name");
         String validPropertyValue = Utilities.globalSettings.getString("valid property value");
         String invalidPropertyValue = Utilities.globalSettings.getString("invalid property value");
         String jsonString = Utilities.getBody(baseReq);
         String[] currentTechnique = new String[]{validProperty,validPropertyValue,invalidPropertyValue};
-        ArrayList<String[]> jsonList = PrototypePollutionBodyScan.getAttackAndNullifyJsonStrings(jsonString, currentTechnique);
+        ArrayList<String[]> jsonList = PrototypePollutionBodyScan.getAttackAndNullifyJsonStrings(jsonString, currentTechnique, propertyRegex);
         for (String[] json : jsonList) {
             String attackJsonString = json[0];
             String nullifyJsonString = json[1];
@@ -52,7 +52,7 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
         String invalidPropertyValue = Utilities.globalSettings.getString("invalid property value");
         byte[] attackReq;
         if(insertionPointType == IScannerInsertionPoint.INS_PARAM_JSON) {
-            scanJsonBody(baseReq, service);
+            scanJsonBody(baseReq, service, ".*");
         } else {
             IParameter parameter = Utilities.helpers.buildParameter(PrototypePollutionBodyScan.urlEncodeWithoutPlus(validProperty), PrototypePollutionBodyScan.urlEncodeWithoutPlus(validPropertyValue), insertionPointType);
             attackReq = Utilities.helpers.addParameter(baseReq, parameter);
