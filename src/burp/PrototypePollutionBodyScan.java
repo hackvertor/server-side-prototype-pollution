@@ -230,7 +230,9 @@ public class PrototypePollutionBodyScan extends Scan {
                byte[] attackRequest = baseReq.clone();
                attackRequest = Utilities.setBody(attackRequest, attackJsonString);
                attackRequest = Utilities.fixContentLength(attackRequest);
-               doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null, nullifyJsonString);
+               if(attackRequest != null) {
+                   doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null, nullifyJsonString);
+               }
            }
         } else {
             JsonElement attackJson = generateJson(jsonString, currentTechnique, false);
