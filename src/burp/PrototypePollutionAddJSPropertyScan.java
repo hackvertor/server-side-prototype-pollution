@@ -30,18 +30,20 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
         String jsonString = Utilities.getBody(baseReq);
         String[] currentTechnique = new String[]{validProperty,validPropertyValue,invalidPropertyValue};
         ArrayList<String[]> jsonList = PrototypePollutionBodyScan.getAttackAndNullifyJsonStrings(jsonString, currentTechnique, propertyRegex);
-        for (String[] json : jsonList) {
-            String attackJsonString = json[0];
-            String nullifyJsonString = json[1];
-            byte[] attackRequest = baseReq.clone();
-            attackRequest = Utilities.setBody(attackRequest, attackJsonString);
-            attackRequest = Utilities.fixContentLength(attackRequest);
+        if(jsonList != null) {
+            for (String[] json : jsonList) {
+                String attackJsonString = json[0];
+                String nullifyJsonString = json[1];
+                byte[] attackRequest = baseReq.clone();
+                attackRequest = Utilities.setBody(attackRequest, attackJsonString);
+                attackRequest = Utilities.fixContentLength(attackRequest);
 
-            byte[] nullifyRequest = baseReq.clone();
-            nullifyRequest = Utilities.setBody(nullifyRequest, nullifyJsonString);
-            nullifyRequest = Utilities.fixContentLength(nullifyRequest);
-            if(attackRequest != null && nullifyRequest != null) {
-                doAttack(baseReq, service, attackRequest, nullifyRequest);
+                byte[] nullifyRequest = baseReq.clone();
+                nullifyRequest = Utilities.setBody(nullifyRequest, nullifyJsonString);
+                nullifyRequest = Utilities.fixContentLength(nullifyRequest);
+                if (attackRequest != null && nullifyRequest != null) {
+                    doAttack(baseReq, service, attackRequest, nullifyRequest);
+                }
             }
         }
     }
