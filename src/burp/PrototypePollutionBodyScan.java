@@ -117,7 +117,9 @@ public class PrototypePollutionBodyScan extends Scan {
             output += processJsonElement(e, targetObject, existingPropertyName, newPropertyName, value);
             output += ",";
         }
-        output = removeLastChar(output);
+        if(output.endsWith(",")) {
+            output = removeLastChar(output);
+        }
         output += "]";
         return output;
     }
@@ -137,7 +139,9 @@ public class PrototypePollutionBodyScan extends Scan {
             }
             output += ",";
         }
-        output = removeLastChar(output);
+        if(output.endsWith(",")) {
+            output = removeLastChar(output);
+        }
         output += "}";
         return output;
     }
