@@ -30,7 +30,6 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
         String jsonString = Utilities.getBody(baseReq);
         String[] currentTechnique = new String[]{validProperty,validPropertyValue,invalidPropertyValue};
         ArrayList<String[]> jsonList = PrototypePollutionBodyScan.getAttackAndNullifyJsonStrings(jsonString, currentTechnique, propertyRegex);
-        Utilities.out("Running add JS property scan");
         for (String[] json : jsonList) {
             String attackJsonString = json[0];
             String nullifyJsonString = json[1];
@@ -48,7 +47,6 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
     }
 
     public void injectInsertionPoint(byte[] baseReq, IHttpService service, byte insertionPointType) {
-
         String validProperty = Utilities.globalSettings.getString("valid property name");
         String validPropertyValue = Utilities.globalSettings.getString("valid property value");
         String invalidProperty = Utilities.globalSettings.getString("invalid property name");
