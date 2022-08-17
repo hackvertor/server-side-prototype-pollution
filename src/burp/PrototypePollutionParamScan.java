@@ -45,6 +45,9 @@ public class PrototypePollutionParamScan extends ParamScan {
             if (attackResp.failed()) {
                 continue;
             }
+
+            Utilities.out("Doing param scan " + attackType + " attack");
+
             if(attackType.equals("blitz")) {
                 byte[] req = baseRequestResponse.getRequest();
                 Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);

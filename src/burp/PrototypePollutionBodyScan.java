@@ -217,7 +217,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
     public void doAttack(byte[] baseReq, String jsonString, IHttpService service, String[] currentTechnique, String attackType) {
 
-        if(!jsonString.trim().startsWith("{")) {
+        if(!jsonString.trim().startsWith("{") && !jsonString.trim().startsWith("[")) {
             return;
         }
 
@@ -249,6 +249,7 @@ public class PrototypePollutionBodyScan extends Scan {
          if(attackResp.failed()) {
              return;
          }
+         Utilities.out("Doing JSON"+(hasBody ? " Body " : " ") + attackType + " attack");
          if(attackType.equals("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
              Boolean hasImmutable = responseHas(response, "Immutable.{1,10}prototype.{1,10}object");
