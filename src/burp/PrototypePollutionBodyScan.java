@@ -223,15 +223,17 @@ public class PrototypePollutionBodyScan extends Scan {
 
         if(attackType.equals("blitz")) {
            ArrayList<String[]> jsonList = getAttackAndNullifyJsonStrings(jsonString, currentTechnique, "[.]");
-           for (String[] json : jsonList) {
-               String attackJsonString = json[0];
-               String nullifyJsonString = json[1];
+           if(jsonList != null) {
+               for (String[] json : jsonList) {
+                   String attackJsonString = json[0];
+                   String nullifyJsonString = json[1];
 
-               byte[] attackRequest = baseReq.clone();
-               attackRequest = Utilities.setBody(attackRequest, attackJsonString);
-               attackRequest = Utilities.fixContentLength(attackRequest);
-               if(attackRequest != null) {
-                   doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null, nullifyJsonString);
+                   byte[] attackRequest = baseReq.clone();
+                   attackRequest = Utilities.setBody(attackRequest, attackJsonString);
+                   attackRequest = Utilities.fixContentLength(attackRequest);
+                   if (attackRequest != null) {
+                       doJsonAttack(baseReq, service, attackRequest, attackType, jsonString, currentTechnique, true, null, nullifyJsonString);
+                   }
                }
            }
         } else {
