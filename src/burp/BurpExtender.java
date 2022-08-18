@@ -134,17 +134,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new PrototypePollutionParamSquareScan("Prototype pollution param square scan");
         new PrototypePollutionAddJSPropertyScan("Prototype pollution add js property scan");
         new PrototypePollutionJSPropertyParamScan("Prototype pollution js property param scan");
-
-        new HeaderPoison("Header poison");
-        new PortDOS("port-DoS");
-        //new ValueScan("param-value probe");
-        new UnkeyedParamScan("Unkeyed param");
-        new FatGet("fat GET");
-        new NormalisedParamScan("normalised param");
-        new NormalisedPathScan("normalised path");
-        new RailsUtmScan("rails param cloaking scan");
-        new HeaderMutationScan("identify header smuggling mutations");
-
+        new PrototypePollutionFullScan("Prototype pollution full scan");
 
         new BulkScanLauncher(BulkScan.scans);
 
