@@ -16,6 +16,7 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
 
     @Override
     List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+        Utilities.out("--Running Add JS Property scan--");
         injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_COOKIE);
         injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_BODY);
         injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_URL);

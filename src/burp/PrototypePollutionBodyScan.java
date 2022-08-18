@@ -39,6 +39,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
     @Override
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+        Utilities.out("--Running Body scan--");
         for (Map.Entry<String, String[]> technique : jsonTechniques.entrySet()) {
             doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), technique.getKey());
         }

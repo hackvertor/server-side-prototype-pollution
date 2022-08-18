@@ -13,6 +13,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+        Utilities.out("--Running param scan--");
         injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionBodyScan.jsonTechniques);
         return null;
     }

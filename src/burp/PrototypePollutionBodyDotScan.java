@@ -30,6 +30,7 @@ public class PrototypePollutionBodyDotScan extends PrototypePollutionBodyScan {
     }
 
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+        Utilities.out("--Running Body dot scan--");
         for (Map.Entry<String, String[]> technique : jsonTechniquesDot.entrySet()) {
             doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), technique.getKey());
         }

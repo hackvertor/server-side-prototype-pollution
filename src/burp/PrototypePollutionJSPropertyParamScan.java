@@ -24,12 +24,11 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-
+        Utilities.out("--Running JS property param scan--");
         String validProperty = Utilities.globalSettings.getString("valid property name");
         String invalidProperty = Utilities.globalSettings.getString("invalid property name");
         byte[] attackReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(validProperty).getBytes());
         byte[] nullifyReq = insertionPoint.buildRequest(PrototypePollutionBodyScan.urlEncodeWithoutPlus(invalidProperty).getBytes());
-        Utilities.out("Running JS property param scan");
         if(attackReq != null && nullifyReq != null) {
             doAttack(baseRequestResponse, insertionPoint, attackReq, nullifyReq);
         }
