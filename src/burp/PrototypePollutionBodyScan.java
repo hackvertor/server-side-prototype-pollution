@@ -132,7 +132,7 @@ public class PrototypePollutionBodyScan extends Scan {
         String output = "{";
         Set<Map.Entry<String, JsonElement>> members = o.entrySet();
         for (Map.Entry<String, JsonElement> element : members) {
-            if(targetObject.getAsJsonObject() == o && element.getKey().equals(existingPropertyName)) {
+            if(targetObject != null && element != null && targetObject.getAsJsonObject() == o && element.getKey().equals(existingPropertyName)) {
                 output += new JsonPrimitive(newPropertyName) + ":" + newValue;
             } else {
                 output += new JsonPrimitive(element.getKey()) + ":" + processJsonElement(element.getValue(), targetObject, existingPropertyName, newPropertyName, newValue);

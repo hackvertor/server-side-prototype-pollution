@@ -13,6 +13,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
     implementation 'org.jsoup:jsoup:1.8.1'
     implementation files('albinowaxUtils-all.jar')
+    implementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 }
 
 sourceSets {
@@ -36,4 +37,8 @@ task fatJar(type: Jar) {
 compileJava {
     targetCompatibility '1.8'
     sourceCompatibility '1.8'
+}
+
+test {
+    useJUnitPlatform()
 }
