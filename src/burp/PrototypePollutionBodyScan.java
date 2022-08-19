@@ -12,7 +12,7 @@ public class PrototypePollutionBodyScan extends Scan {
     static final String CANARY = "f1e3f7a9";
     static final Integer MAX_RETRIES = 1;
 
-    static final String BLITZ_REGEX = "(?:Immutable.{1,5}prototype.{1,5}object|Cannot.{1,5}read.{1,5}properties.{1,5}of.{1,5}undefined|Cannot{1,5}read{1,5}properties{1,5}of{1,5}null)";
+    static final String BLITZ_REGEX = "(?:Immutable.{1,10}prototype.{1,10}object|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}undefined|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}null)";
 
     static final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
     {
@@ -268,9 +268,9 @@ public class PrototypePollutionBodyScan extends Scan {
          Utilities.out("Doing JSON"+(hasBody ? " Body " : " ") + attackType + " attack");
          if(attackType.equals("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
-             Boolean hasImmutable = responseHas(response, BLITZ_REGEX);
+             Boolean hasCorrectResponse = responseHas(response, BLITZ_REGEX);
              Boolean hasStatusCode500 = hasStatusCode(500, attackResp);
-             if(hasImmutable || hasStatusCode500) {
+             if(hasCorrectResponse || hasStatusCode500) {
                  byte[] nullifyAttackRequest = createRequestFromJson(nullifiedJsonString, baseReq, hasBody, param);
                  Resp nullifyResponse = request(service, nullifyAttackRequest, MAX_RETRIES);
 
@@ -279,7 +279,7 @@ public class PrototypePollutionBodyScan extends Scan {
                  }
 
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
-                 if((hasImmutable && !responseHas(nullifyResponseStr, BLITZ_REGEX)) || (hasStatusCode500 && !hasStatusCode(500, nullifyResponse))) {
+                 if((hasCorrectResponse && !responseHas(nullifyResponseStr, BLITZ_REGEX)) || (hasStatusCode500 && !hasStatusCode(500, nullifyResponse))) {
                      reportIssue("PP JSON Blitz", DETAIL, "High", "Firm", ".", baseReq, attackResp, nullifyResponse);
                  }
              }
