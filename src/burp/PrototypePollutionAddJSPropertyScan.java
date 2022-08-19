@@ -74,7 +74,7 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
         String regex = Utilities.globalSettings.getString("vulnerable response regex");
 
         Resp attackResp = request(service, attackReq, PrototypePollutionBodyScan.MAX_RETRIES);
-        if(PrototypePollutionJSPropertyParamScan.regexResponse(attackResp)) {
+        if(attackResp != null && PrototypePollutionJSPropertyParamScan.regexResponse(attackResp)) {
             Resp nullifyResp = request(service, nullifyReq, PrototypePollutionBodyScan.MAX_RETRIES);
             if(!PrototypePollutionJSPropertyParamScan.regexResponse(nullifyResp)) {
                 IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(attackResp, regex));
