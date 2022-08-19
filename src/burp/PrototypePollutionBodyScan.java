@@ -379,7 +379,6 @@ public class PrototypePollutionBodyScan extends Scan {
              parser.parse(json);
              return true;
          } catch(JsonSyntaxException e) {
-             Utilities.err("Invalid JSON:" + e);
              return false;
          }
      }
