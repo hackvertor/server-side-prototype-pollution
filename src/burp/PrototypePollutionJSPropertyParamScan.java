@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class PrototypePollutionJSPropertyParamScan extends ParamScan {
 
-    static final String DEFAULT_RESPONSE_REGEX = "(?:Immutable.{1,5}prototype.{1,5}object|Cannot.{1,5}read.{1,5}properties.{1,5}of.{1,5}undefined)";
+    static final String DEFAULT_RESPONSE_REGEX = PrototypePollutionBodyScan.BLITZ_REGEX;
     static public final String DEFAULT_VALID_PROPERTY = "__proto__.__proto__";
     static public final String DEFAULT_VALID_PROPERTY_VALUE = "{}";
     static public final String DEFAULT_INVALID_PROPERTY = "__proto__.y";

@@ -53,7 +53,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                 byte[] req = baseRequestResponse.getRequest();
                 Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);
                 String response = Utilities.getBody(attackResp.getReq().getResponse());
-                Boolean hasImmutable = PrototypePollutionBodyScan.responseHas(response, "Immutable.{1,10}prototype.{1,10}object");
+                Boolean hasImmutable = PrototypePollutionBodyScan.responseHas(response, PrototypePollutionBodyScan.BLITZ_REGEX);
                 Boolean hasStatusCode500 = PrototypePollutionBodyScan.hasStatusCode(500, attackResp);
                 if(hasImmutable || hasStatusCode500) {
                     byte[] nullifyAttackRequest;
@@ -72,7 +72,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                     }
 
                     String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
-                    if((hasImmutable && !PrototypePollutionBodyScan.responseHas(nullifyResponseStr, "Immutable.{1,10}prototype.{1,10}object")) || (hasStatusCode500 && !PrototypePollutionBodyScan.hasStatusCode(500, nullifyResponse))) {
+                    if((hasImmutable && !PrototypePollutionBodyScan.responseHas(nullifyResponseStr, PrototypePollutionBodyScan.BLITZ_REGEX)) || (hasStatusCode500 && !PrototypePollutionBodyScan.hasStatusCode(500, nullifyResponse))) {
                         PrototypePollutionBodyScan.reportIssue("PP JSON Blitz", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
                     }
                 }
