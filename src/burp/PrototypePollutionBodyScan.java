@@ -192,7 +192,7 @@ public class PrototypePollutionBodyScan extends Scan {
                 Matcher matcher = regex.matcher(existingPropertyName);
                 if( matcher.find() ) {
                     for (int i = 0; i < currentTechnique.length; i += 3) {
-                        String techniquePropertyName = currentTechnique[i];
+                        String techniquePropertyName = currentTechnique[i].equals("") ? existingPropertyName : currentTechnique[i];
                         String techniqueValue = currentTechnique[i + 1];
                         String nullifyValue = currentTechnique[i + 2];
                         jsonList.add(new String[]{generateJsonString(fullJsonElement, jsonElement, existingPropertyName, techniquePropertyName, parser.parse(techniqueValue)),generateJsonString(fullJsonElement, jsonElement, existingPropertyName, techniquePropertyName, parser.parse(nullifyValue))});
@@ -233,7 +233,7 @@ public class PrototypePollutionBodyScan extends Scan {
             return;
         }
 
-        if(attackType.equals("blitz")) {
+        if(attackType.contains("blitz")) {
            ArrayList<String[]> jsonList = getAttackAndNullifyJsonStrings(jsonString, currentTechnique, "[.]");
            if(jsonList != null) {
                for (String[] json : jsonList) {
@@ -266,7 +266,7 @@ public class PrototypePollutionBodyScan extends Scan {
              return;
          }
          Utilities.out("Doing JSON"+(hasBody ? " Body " : " ") + attackType + " attack");
-         if(attackType.equals("blitz")) {
+         if(attackType.contains("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
              Boolean hasCorrectResponse = responseHas(response, BLITZ_REGEX);
              Boolean hasStatusCode500 = hasStatusCode(500, attackResp);
