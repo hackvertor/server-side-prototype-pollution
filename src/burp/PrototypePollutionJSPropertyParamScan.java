@@ -42,9 +42,9 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
         String regex = Utilities.globalSettings.getString("vulnerable response regex");
 
         Resp attackResp = request(service, attackReq, PrototypePollutionBodyScan.MAX_RETRIES);
-        if(regexResponse(attackResp)) {
+        if(attackResp != null && regexResponse(attackResp)) {
             Resp nullifyResp = request(service, nullifyReq, PrototypePollutionBodyScan.MAX_RETRIES);
-            if(!regexResponse(nullifyResp)) {
+            if(nullifyResp != null && !regexResponse(nullifyResp)) {
                 IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), getRegexMarkerPositions(attackResp, regex));
                 IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
                 PrototypePollutionBodyScan.reportIssue("Property param scan using "+validProperty, "The parameter "+insertionPoint.getInsertionPointName()+" was identified and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseRequestResponse.getRequest(), new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
