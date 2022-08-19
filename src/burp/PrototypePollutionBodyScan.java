@@ -12,7 +12,7 @@ public class PrototypePollutionBodyScan extends Scan {
     static final String CANARY = "f1e3f7a9";
     static final Integer MAX_RETRIES = 1;
 
-    static final String BLITZ_REGEX = "(?:Immutable.{1,5}prototype.{1,5}object|Cannot.{1,5}read.{1,5}properties.{1,5}of.{1,5}undefined)";
+    static final String BLITZ_REGEX = "(?:Immutable.{1,5}prototype.{1,5}object|Cannot.{1,5}read.{1,5}properties.{1,5}of.{1,5}undefined|Cannot{1,5}read{1,5}properties{1,5}of{1,5}null)";
 
     static final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
     {
@@ -187,7 +187,6 @@ public class PrototypePollutionBodyScan extends Scan {
             JsonParser parser = new JsonParser();
             Set<Map.Entry<String, JsonElement>> jsonObjectEntrySet = jsonElement.getAsJsonObject().entrySet();
             for (Map.Entry<String, JsonElement> jsonEntry : jsonObjectEntrySet) {
-                JsonElement originalJsonObject = jsonEntry.getValue();
                 String existingPropertyName = jsonEntry.getKey();
                 Pattern regex = Pattern.compile(propertyRegex, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = regex.matcher(existingPropertyName);
@@ -201,12 +200,18 @@ public class PrototypePollutionBodyScan extends Scan {
                             JsonArray jsonArray = jsonEntry.getValue().getAsJsonArray();
                             if (jsonArray.size() == 1) {
                                 JsonElement originalValue = jsonArray.get(0);
+                                JsonNull jsonNull = JsonNull.INSTANCE;
                                 modifyArray(jsonArray, new JsonPrimitive(techniquePropertyName));
                                 String attackArray = fullJsonElement.toString();
                                 modifyArray(jsonArray, parser.parse(nullifyValue));
                                 String nullifyArray = fullJsonElement.toString();
                                 jsonList.add(new String[] { attackArray, nullifyArray });
-                                modifyArray(originalJsonObject, originalValue);
+                                modifyArray(jsonArray, jsonNull);
+                                attackArray = fullJsonElement.toString();
+                                modifyArray(jsonArray, parser.parse(nullifyValue));
+                                nullifyArray = fullJsonElement.toString();
+                                jsonList.add(new String[] { attackArray, nullifyArray });
+                                modifyArray(jsonArray, originalValue);
                             }
                         }
                     }
