@@ -52,6 +52,11 @@ public class PrototypePollutionParamScan extends ParamScan {
             if(attackType.contains("blitz")) {
                 byte[] req = baseRequestResponse.getRequest();
                 Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);
+
+                if(attackResp.getReq().getResponse() == null) {
+                    continue;
+                }
+
                 String response = Utilities.getBody(attackResp.getReq().getResponse());
                 Boolean hasCorrectResponse = PrototypePollutionBodyScan.responseHas(response, PrototypePollutionBodyScan.BLITZ_REGEX);
                 Boolean hasStatusCode500 = PrototypePollutionBodyScan.hasStatusCode(500, attackResp);
@@ -67,7 +72,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                     request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
                     Resp nullifyResponse = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
-                    if(nullifyResponse.failed()) {
+                    if(nullifyResponse.failed() || nullifyResponse.getReq().getResponse() == null) {
                         continue;
                     }
 
@@ -84,7 +89,11 @@ public class PrototypePollutionParamScan extends ParamScan {
                 } else {
                     req = baseRequestResponse.getRequest();
                 }
+
                 Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);
+                if(baseResp.getReq().getResponse() == null) {
+                    continue;
+                }
                 String response = Utilities.getBody(baseResp.getReq().getResponse());
                 if(PrototypePollutionBodyScan.hasSpacing(response)) {
                     byte[] nullifyAttackRequest;
@@ -98,7 +107,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                     request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
                     Resp nullifyResponse = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
-                    if(nullifyResponse.failed()) {
+                    if(nullifyResponse.getReq().getResponse() == null || nullifyResponse.failed()) {
                         continue;
                     }
 
@@ -132,7 +141,7 @@ public class PrototypePollutionParamScan extends ParamScan {
             } else if(attackType.equals("options")) {
                 Resp optionsResp = request(service, Utilities.setMethod(baseRequestResponse.getRequest(), "OPTIONS"), PrototypePollutionBodyScan.MAX_RETRIES);
 
-                if(optionsResp.failed()) {
+                if(optionsResp.failed() || optionsResp.getReq().getResponse() == null) {
                     continue;
                 }
 
@@ -155,7 +164,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     Resp nullifyOptionsResp = request(service, Utilities.setMethod(baseRequestResponse.getRequest(), "OPTIONS"), PrototypePollutionBodyScan.MAX_RETRIES);
 
-                    if(nullifyOptionsResp.failed()) {
+                    if(nullifyOptionsResp.failed() || nullifyOptionsResp.getReq().getResponse() == null) {
                         continue;
                     }
 
@@ -190,7 +199,7 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     Resp nullifyResp = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
-                    if(nullifyResp.failed()) {
+                    if(nullifyResp.failed() || nullifyResp.getReq().getResponse() == null) {
                         continue;
                     }
 
