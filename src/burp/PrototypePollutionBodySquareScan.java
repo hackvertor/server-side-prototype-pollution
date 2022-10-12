@@ -8,6 +8,7 @@ public class PrototypePollutionBodySquareScan extends PrototypePollutionBodyScan
     static final Map<String, String[]> jsonTechniquesSquare = new HashMap<String, String[]>()
     {
         {
+            //__proto__
             put("spacing", new String[]{
                     "__proto__[json spaces]","\" \"","\"\""
             });
@@ -25,6 +26,22 @@ public class PrototypePollutionBodySquareScan extends PrototypePollutionBodyScan
             });
             put("blitz2", new String[]{
                     "","null","\"xyz\""
+            });
+            //constructor
+            put("spacing constructor", new String[]{
+                    "constructor[prototype][json spaces]","\" \"","\"\""
+            });
+            put("options constructor", new String[]{
+                    "constructor[prototype][head]","true","false"
+            });
+            put("status constructor", new String[]{
+                    "constructor[prototype][status]","510","0"
+            });
+            put("exposedHeaders constructor", new String[]{
+                    "constructor[prototype][exposedHeaders]","[\""+CANARY+"\"]","null"
+            });
+            put("blitz1 constructor", new String[]{
+                    "constructor[prototype][__proto__]","{}","\"xyz\""
             });
         }
     };

@@ -81,7 +81,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                         PrototypePollutionBodyScan.reportIssue("PP JSON Blitz", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
                     }
                 }
-            } else if(attackType.equals("spacing")) {
+            } else if(attackType.contains("spacing")) {
                 byte[] req;
                 if(baseValue.equals("{}")) {
                     req = baseRequestResponse.getRequest().clone();
@@ -116,7 +116,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                         PrototypePollutionBodyScan.reportIssue("PP JSON spacing", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp, nullifyResponse);
                     }
                 }
-            } else if(attackType.equals("status")) {
+            } else if(attackType.contains("status")) {
                 Resp invalidJsonResp = makeInvalidJsonRequest(service, insertionPoint);
                 if(PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonResp)) {
                     byte[] nullifyAttackRequest;
@@ -138,7 +138,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                         PrototypePollutionBodyScan.reportIssue("PP JSON status", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                     }
                 }
-            } else if(attackType.equals("options")) {
+            } else if(attackType.contains("options")) {
                 Resp optionsResp = request(service, Utilities.setMethod(baseRequestResponse.getRequest(), "OPTIONS"), PrototypePollutionBodyScan.MAX_RETRIES);
 
                 if(optionsResp.failed() || optionsResp.getReq().getResponse() == null) {
@@ -173,7 +173,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                         PrototypePollutionBodyScan.reportIssue("PP JSON options", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                     }
                 }
-            } else if(attackType.equals("exposedHeaders")) {
+            } else if(attackType.contains("exposedHeaders")) {
                 Resp baseResp = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
 
                 if(baseResp.failed()) {

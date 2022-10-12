@@ -17,6 +17,7 @@ public class PrototypePollutionBodyScan extends Scan {
     static final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
     {
         {
+            //__proto__
             put("spacing", new String[]{
                     "__proto__","{\"json spaces\":\" \"}","{\"json spaces\":\"\"}"
             });
@@ -31,6 +32,22 @@ public class PrototypePollutionBodyScan extends Scan {
             });
             put("blitz", new String[]{
                     "__proto__","{\"__proto__\":{}}","{\"__proto__\":\"xyz\"}"
+            });
+            //constructor
+            put("spacing constructor", new String[]{
+                    "constructor","{\"prototype\":{\"json spaces\":\" \"}}","{\"prototype\":{\"json spaces\":\"\"}}"
+            });
+            put("options constructor", new String[]{
+                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}"
+            });
+            put("status constructor", new String[]{
+                    "constructor","{\"prototype\":{\"status\":510}}","{\"prototype\":{\"status\":0}}"
+            });
+            put("exposedHeaders constructor", new String[]{
+                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}","{\"prototype\":{\"exposedHeaders\":null}}"
+            });
+            put("blitz constructor", new String[]{
+                    "constructor","{\"prototype\":{\"__proto__\":{}}}","{\"prototype\":{\"__proto__\":\"xyz\"}}"
             });
         }
     };
@@ -63,6 +80,9 @@ public class PrototypePollutionBodyScan extends Scan {
 
     private byte[] createRequestAndBuildJson(String jsonString, byte[] baseReq, String[] currentTechnique, Boolean hasBody, Boolean nullify, IParameter param) {
         JsonElement json = generateJson(jsonString, currentTechnique, nullify);
+        if(json == null) {
+            json = new JsonObject();
+        }
         byte[] request = baseReq.clone();
         if(hasBody) {
             request = Utilities.setBody(request, json.toString());
@@ -283,7 +303,7 @@ public class PrototypePollutionBodyScan extends Scan {
                      reportIssue("PP JSON Blitz", DETAIL, "High", "Firm", ".", baseReq, attackResp, nullifyResponse);
                  }
              }
-         } else if(attackType.equals("spacing")) {
+         } else if(attackType.contains("spacing")) {
              Resp baseResp = request(service, baseReq, MAX_RETRIES);
 
              if(baseResp.failed() || baseResp.getReq().getResponse() == null) {
@@ -305,7 +325,7 @@ public class PrototypePollutionBodyScan extends Scan {
                      reportIssue("PP JSON spacing", DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp, nullifyResponse);
                  }
              }
-         } else if(attackType.equals("status")) {
+         } else if(attackType.contains("status")) {
              Resp invalidJsonResp = makeInvalidJsonRequest(service, baseReq);
              if(hasStatusCode(510, invalidJsonResp)) {
                  byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
@@ -321,7 +341,7 @@ public class PrototypePollutionBodyScan extends Scan {
                      reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseReq, attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                  }
              }
-         } else if(attackType.equals("options")) {
+         } else if(attackType.contains("options")) {
              Resp optionsResp = request(service, Utilities.setMethod(baseReq, "OPTIONS"), MAX_RETRIES);
 
              if(optionsResp.failed()) {
@@ -349,7 +369,7 @@ public class PrototypePollutionBodyScan extends Scan {
                      reportIssue("PP JSON options", DETAIL, "High", "Firm", ".", baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                  }
              }
-         } else if(attackType.equals("exposedHeaders")) {
+         } else if(attackType.contains("exposedHeaders")) {
              Resp baseResp = request(service, baseReq, MAX_RETRIES);
 
              if(baseResp.failed()) {
