@@ -15,7 +15,7 @@ public class PrototypePollutionParamSquareScan extends PrototypePollutionParamSc
             case IScannerInsertionPoint.INS_PARAM_URL:
             case IScannerInsertionPoint.INS_PARAM_COOKIE:
             case IScannerInsertionPoint.INS_PARAM_JSON:
-                injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionBodySquareScan.jsonTechniques);
+                injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionBodySquareScan.jsonTechniquesSquare);
                 break;
         }
         return null;
