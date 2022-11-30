@@ -7,7 +7,7 @@ import java.util.*;
 import static burp.PrototypePollutionBodyScan.MAX_RETRIES;
 
 public class PrototypePollutionAsyncBodyScan extends Scan {
-
+    final Boolean injectSpecificProperties = false;
     static final Map<String, String[]> asyncTechniques = new HashMap<String, String[]>()
     {
         {
@@ -50,16 +50,27 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
         if(!jsonString.trim().startsWith("{") && !jsonString.trim().startsWith("[")) {
             return;
         }
-        ArrayList<String[]> jsonList = getAttackJsonStrings(jsonString, technique);
-        if(jsonList != null) {
-            for (String[] json : jsonList) {
-                String attackJsonString = json[0];
-                byte[] attackRequest = baseReq.clone();
-                attackRequest = Utilities.setBody(attackRequest, attackJsonString);
-                attackRequest = Utilities.fixContentLength(attackRequest);
-                if (attackRequest != null) {
-                    request(service, attackRequest, MAX_RETRIES);
+
+        if(injectSpecificProperties) {
+            ArrayList<String[]> jsonList = getAttackJsonStrings(jsonString, technique);
+            if (jsonList != null) {
+                for (String[] json : jsonList) {
+                    String attackJsonString = json[0];
+                    byte[] attackRequest = baseReq.clone();
+                    attackRequest = Utilities.setBody(attackRequest, attackJsonString);
+                    attackRequest = Utilities.fixContentLength(attackRequest);
+                    if (attackRequest != null) {
+                        request(service, attackRequest, MAX_RETRIES);
+                    }
                 }
+            }
+        } else {
+            JsonElement attackJson = PrototypePollutionBodyScan.generateJson(jsonString, technique.getValue(), false);
+            byte[] attackRequest = baseReq.clone();
+            if (attackJson != null && !attackJson.isJsonNull()) {
+                attackRequest = Utilities.setBody(attackRequest, attackJson.toString());
+                attackRequest = Utilities.fixContentLength(attackRequest);
+                request(service, attackRequest, MAX_RETRIES);
             }
         }
     }
