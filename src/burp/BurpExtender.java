@@ -135,6 +135,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new PrototypePollutionAddJSPropertyScan("Prototype pollution add js property scan");
         new PrototypePollutionJSPropertyParamScan("Prototype pollution js property param scan");
         new PrototypePollutionAsyncBodyScan("Prototype pollution async body scan");
+        new PrototypePollutionAsyncParamScan("Prototype pollution async param scan");
         new KitchenSink("Prototype pollution full scan");
 
         new BulkScanLauncher(BulkScan.scans);
