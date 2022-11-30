@@ -162,6 +162,11 @@ public class PrototypePollutionBodyScan extends Scan {
             }
             output += ",";
         }
+
+        if(members.size() == 0) {
+            output += new JsonPrimitive(newPropertyName) + ":" + newValue;
+        }
+
         if(output.endsWith(",")) {
             output = removeLastChar(output);
         }

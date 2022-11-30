@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Server Side Prototype Pollution";
-    private static final String version = "1.0.0";
+    private static final String version = "1.0.1";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
@@ -134,6 +134,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new PrototypePollutionParamSquareScan("Prototype pollution param square scan");
         new PrototypePollutionAddJSPropertyScan("Prototype pollution add js property scan");
         new PrototypePollutionJSPropertyParamScan("Prototype pollution js property param scan");
+        new PrototypePollutionAsyncBodyScan("Prototype pollution async body scan");
         new KitchenSink("Prototype pollution full scan");
 
         new BulkScanLauncher(BulkScan.scans);
