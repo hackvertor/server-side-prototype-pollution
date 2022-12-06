@@ -1,5 +1,7 @@
 package burp;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -38,7 +40,10 @@ class Monitor implements Runnable, IExtensionStateListener {
         String id = interaction.getProperty("interaction_id");
         Utilities.out("Got an interaction:"+interaction.getProperties());
         MetaRequest metaReq = collab.getRequest(id);
-        IHttpRequestResponse req = metaReq.getRequest();
+        IHttpRequestResponse req = null;
+        if(metaReq != null) {
+            req = metaReq.getRequest();
+        }
         String severity = "High";
         String ipAddress = interaction.getProperty("client_ip");
 
@@ -54,28 +59,46 @@ class Monitor implements Runnable, IExtensionStateListener {
         String message = "The collaborator was contacted by <b>" + ipAddress;
         message +=  "</b>";
 
-        try {
-            long interactionTime = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SSS z").parse(interaction.getProperty("time_stamp")).getTime();
-            long mill = interactionTime - metaReq.getTimestamp();
-            int seconds = (int) (mill / 1000) % 60;
-            int minutes = (int) ((mill / (1000 * 60)) % 60);
-            int hours = (int) ((mill / (1000 * 60 * 60)) % 24);
-            message += " after a delay of <b>" + String.format("%02d:%02d:%02d", hours, minutes, seconds) + "</b>:<br/><br/>";
-        }
-        catch (java.text.ParseException e) {
-            message += e.toString();
+        if(metaReq != null) {
+            try {
+                long interactionTime = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SSS z").parse(interaction.getProperty("time_stamp")).getTime();
+                long mill = interactionTime - metaReq.getTimestamp();
+                int seconds = (int) (mill / 1000) % 60;
+                int minutes = (int) ((mill / (1000 * 60)) % 60);
+                int hours = (int) ((mill / (1000 * 60 * 60)) % 24);
+                message += " after a delay of <b>" + String.format("%02d:%02d:%02d", hours, minutes, seconds) + "</b>:<br/><br/>";
+            } catch (java.text.ParseException e) {
+                message += e.toString();
+            }
         }
 
         String decodedDetail = new String(Utilities.helpers.base64Decode(rawDetail));
         message += "<pre>    "+decodedDetail.replace("<", "&lt;").replace("\n", "\n    ")+"</pre>";
 
-        message += "The payload was sent at "+new Date(metaReq.getTimestamp()).toString() + " and received on " + interaction.getProperty("time_stamp") +"<br/><br/>";
+        if(metaReq != null) {
+            message += "The payload was sent at " + new Date(metaReq.getTimestamp()) + " and received on " + interaction.getProperty("time_stamp") + "<br/><br/>";
+        }
 
         message += "To manually replicate this issue, use the Burp Collaborator Client available in the main tabs.<br/><br/>";
+        IRequestInfo reqInfo = null;
+        if(req != null) {
+            reqInfo = Utilities.callbacks.getHelpers().analyzeRequest(req.getHttpService(), req.getRequest());
+        }
+        if(req != null) {
+            Utilities.callbacks.addScanIssue(
+                new CustomScanIssue(req.getHttpService(), reqInfo.getUrl(), new IHttpRequestResponse[]{req}, "Server side prototype pollution Collaborator Pingback (" + interaction.getProperty("type") + "): ", message + interaction.getProperties().toString(), severity, "Certain", "Panic")
+            );
+        } else {
+            URL url = null;
+            try {
+                url = new URL("http://unknown");
+            } catch (MalformedURLException e) {
 
-        IRequestInfo reqInfo = Utilities.callbacks.getHelpers().analyzeRequest(req.getHttpService(), req.getRequest());
-        Utilities.callbacks.addScanIssue(
-                new CustomScanIssue(req.getHttpService(), reqInfo.getUrl(), new IHttpRequestResponse[]{req}, "Server side prototype pollution Collaborator Pingback ("+interaction.getProperty("type")+"): ", message+interaction.getProperties().toString(), severity, "Certain", "Panic"));
+            }
+            Utilities.callbacks.addScanIssue(
+                new CustomScanIssue(Utilities.helpers.buildHttpService("unknown", 80, false), url, new IHttpRequestResponse[]{}, "Server side prototype pollution Collaborator Pingback (" + interaction.getProperty("type") + "): ", message + interaction.getProperties().toString(), severity, "Certain", "Panic")
+            );
+        }
     }
 
 }

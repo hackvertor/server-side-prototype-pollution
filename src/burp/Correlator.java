@@ -8,9 +8,10 @@ class Correlator {
     private HashMap<Integer, MetaRequest> requests;
     private int count = 0;
     private HashMap<String, Integer> idToRequestID = new HashMap<>();
+    private int maxRequestStorageLimit = 100000;
 
     Correlator() {
-        requests = new HashMap<>();
+        requests = new LimitedHashMap<>(maxRequestStorageLimit);
         collab = Utilities.callbacks.createBurpCollaboratorClientContext();
     }
 
