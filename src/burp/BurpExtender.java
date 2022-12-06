@@ -21,6 +21,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     static SettingsBox configSettings = new SettingsBox();
     static SettingsBox guessSettings = new SettingsBox();
 
+    static Correlator collab;
+    static Monitor collabMonitor;
+
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
@@ -141,6 +144,12 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new BulkScanLauncher(BulkScan.scans);
 
         Utilities.callbacks.registerExtensionStateListener(this);
+
+        collab = new Correlator();
+
+        collabMonitor = new Monitor(collab);
+        new Thread(collabMonitor).start();
+        callbacks.registerExtensionStateListener(collabMonitor);
 
         Utilities.out("Loaded " + name + " v" + version);
     }
