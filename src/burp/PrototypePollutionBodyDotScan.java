@@ -28,21 +28,21 @@ public class PrototypePollutionBodyDotScan extends PrototypePollutionBodyScan {
                     "","null","\"xyz\""
             });
             //constructor
-            put("spacing constructor", new String[]{
-                    "constructor.prototype.json spaces","\" \"","\"\""
-            });
-            put("options constructor", new String[]{
-                    "constructor.prototype.head","true","false"
-            });
-            put("status constructor", new String[]{
-                    "constructor.prototype.status","510","0"
-            });
-            put("exposedHeaders constructor", new String[]{
-                    "constructor.prototype.exposedHeaders","[\""+CANARY+"\"]","null"
-            });
-            put("blitz1 constructor", new String[]{
-                    "constructor.prototype.__proto__","{}","\"xyz\""
-            });
+//            put("spacing constructor", new String[]{
+//                    "constructor.prototype.json spaces","\" \"","\"\""
+//            });
+//            put("options constructor", new String[]{
+//                    "constructor.prototype.head","true","false"
+//            });
+//            put("status constructor", new String[]{
+//                    "constructor.prototype.status","510","0"
+//            });
+//            put("exposedHeaders constructor", new String[]{
+//                    "constructor.prototype.exposedHeaders","[\""+CANARY+"\"]","null"
+//            });
+//            put("blitz1 constructor", new String[]{
+//                    "constructor.prototype.__proto__","{}","\"xyz\""
+//            });
         }
     };
     PrototypePollutionBodyDotScan(String name) {

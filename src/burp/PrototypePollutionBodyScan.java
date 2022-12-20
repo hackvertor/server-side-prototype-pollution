@@ -34,21 +34,21 @@ public class PrototypePollutionBodyScan extends Scan {
                     "__proto__","{\"__proto__\":{}}","{\"__proto__\":\"xyz\"}"
             });
             //constructor
-            put("spacing constructor", new String[]{
-                    "constructor","{\"prototype\":{\"json spaces\":\" \"}}","{\"prototype\":{\"json spaces\":\"\"}}"
-            });
-            put("options constructor", new String[]{
-                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}"
-            });
-            put("status constructor", new String[]{
-                    "constructor","{\"prototype\":{\"status\":510}}","{\"prototype\":{\"status\":0}}"
-            });
-            put("exposedHeaders constructor", new String[]{
-                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}","{\"prototype\":{\"exposedHeaders\":null}}"
-            });
-            put("blitz constructor", new String[]{
-                    "constructor","{\"prototype\":{\"__proto__\":{}}}","{\"prototype\":{\"__proto__\":\"xyz\"}}"
-            });
+//            put("spacing constructor", new String[]{
+//                    "constructor","{\"prototype\":{\"json spaces\":\" \"}}","{\"prototype\":{\"json spaces\":\"\"}}"
+//            });
+//            put("options constructor", new String[]{
+//                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}"
+//            });
+//            put("status constructor", new String[]{
+//                    "constructor","{\"prototype\":{\"status\":510}}","{\"prototype\":{\"status\":0}}"
+//            });
+//            put("exposedHeaders constructor", new String[]{
+//                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}","{\"prototype\":{\"exposedHeaders\":null}}"
+//            });
+//            put("blitz constructor", new String[]{
+//                    "constructor","{\"prototype\":{\"__proto__\":{}}}","{\"prototype\":{\"__proto__\":\"xyz\"}}"
+//            });
         }
     };
 
