@@ -48,8 +48,46 @@ public class PrototypePollutionParamScan extends ParamScan {
             }
 
             Utilities.out("Doing param scan " + attackType + " attack");
+            if (attackType.equals("reflection")) {
+                byte[] req;
+                if(baseValue.equals("{}")) {
+                    req = baseRequestResponse.getRequest().clone();
+                    req = Utilities.helpers.updateParameter(req, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), "{\"test\":\"test\"}", insertionPoint.getInsertionPointType()));
+                } else {
+                    req = baseRequestResponse.getRequest();
+                }
 
-            if(attackType.contains("blitz")) {
+                Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);
+                if(baseResp.getReq().getResponse() == null) {
+                    continue;
+                }
+                String response = Utilities.getBody(baseResp.getReq().getResponse());
+                String attackResponseStr = Utilities.getBody(attackResp.getReq().getResponse());
+
+                if(PrototypePollutionBodyScan.responseHas(response, PrototypePollutionBodyScan.REFLECTION_CANARY)) {
+                    PrototypePollutionBodyScan.reportIssue("PP JSON reflection", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp);
+                } else if(!PrototypePollutionBodyScan.responseHas(attackResponseStr, PrototypePollutionBodyScan.REFLECTION_CANARY)) {
+                    byte[] nullifyAttackRequest;
+                    if(insertionPoint.getInsertionPointType() == IScannerInsertionPoint.INS_PARAM_JSON) {
+                        nullifyAttackRequest = insertionPoint.buildRequest(nullifyInjection.getBytes());
+                    } else {
+                        byte[] baseReq = baseRequestResponse.getRequest().clone();
+                        JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), true);
+                        nullifyAttackRequest = Utilities.helpers.updateParameter(baseReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(),insertionPoint.getInsertionPointType()));
+                    }
+                    request(service, nullifyAttackRequest, PrototypePollutionBodyScan.MAX_RETRIES);
+                    Resp nullifyResponse = request(service, baseRequestResponse.getRequest(), PrototypePollutionBodyScan.MAX_RETRIES);
+
+                    if(nullifyResponse.getReq().getResponse() == null || nullifyResponse.failed()) {
+                        continue;
+                    }
+
+                    String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
+                    if(PrototypePollutionBodyScan.responseHas(nullifyResponseStr, PrototypePollutionBodyScan.REFLECTION_CANARY)) {
+                        PrototypePollutionBodyScan.reportIssue("PP JSON reflection", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, baseResp);
+                    }
+                }
+            } else if(attackType.contains("blitz")) {
                 byte[] req = baseRequestResponse.getRequest();
                 Resp baseResp = request(service, req, PrototypePollutionBodyScan.MAX_RETRIES);
 

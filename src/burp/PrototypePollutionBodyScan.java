@@ -10,6 +10,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
     static final String DETAIL = "This application is vulnerable to Server side prototype pollution";
     static final String CANARY = "f1e3f7a9";
+    static final String REFLECTION_CANARY = "d5a347a2";
     static final Integer MAX_RETRIES = 1;
 
     static final String BLITZ_REGEX = "(?:Immutable.{1,10}prototype.{1,10}object|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}undefined|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}null)";
@@ -32,6 +33,9 @@ public class PrototypePollutionBodyScan extends Scan {
             });
             put("blitz", new String[]{
                     "__proto__","{\"__proto__\":{}}","{\"__proto__\":\"xyz\"}"
+            });
+            put("reflection", new String[]{
+                    null,"__proto__","__proto__x"
             });
             //constructor
 //            put("spacing constructor", new String[]{
@@ -257,7 +261,6 @@ public class PrototypePollutionBodyScan extends Scan {
         if(!jsonString.trim().startsWith("{") && !jsonString.trim().startsWith("[")) {
             return;
         }
-
         if(attackType.contains("blitz")) {
            ArrayList<String[]> jsonList = getAttackAndNullifyJsonStrings(jsonString, currentTechnique, "[.]");
            if(jsonList != null) {
@@ -291,7 +294,33 @@ public class PrototypePollutionBodyScan extends Scan {
              return;
          }
          Utilities.out("Doing JSON"+(hasBody ? " Body " : " ") + attackType + " attack");
-         if(attackType.contains("blitz")) {
+
+         if(attackType.equals("reflection")) {
+
+             Resp baseResp = request(service, baseReq, MAX_RETRIES);
+
+             if(baseResp.failed() || baseResp.getReq().getResponse() == null) {
+                 return;
+             }
+             String baseResponseStr = Utilities.getBody(baseResp.getReq().getResponse());
+             String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
+             if (responseHas(baseResponseStr, REFLECTION_CANARY)) {
+                 reportIssue("PP JSON reflection", DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp);
+             } else if (!responseHas(attackResponse, REFLECTION_CANARY)) {
+                 byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
+                 request(service, nullifyAttackRequest, MAX_RETRIES);
+                 Resp nullifyResponse = request(service, baseReq, MAX_RETRIES);
+
+                 if (nullifyResponse.failed() || nullifyResponse.getReq().getResponse() == null) {
+                     return;
+                 }
+
+                 String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
+                 if (responseHas(nullifyResponseStr, REFLECTION_CANARY)) {
+                     reportIssue("PP JSON reflection", DETAIL, "High", "Firm", ".", baseReq, baseResp, attackResp, nullifyResponse);
+                 }
+             }
+         } else if(attackType.contains("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
              Boolean hasCorrectResponse = responseHas(response, BLITZ_REGEX);
              Boolean hasStatusCode500 = hasStatusCode(500, attackResp);
@@ -465,9 +494,13 @@ public class PrototypePollutionBodyScan extends Scan {
 
             for(int i=0;i<currentTechnique.length; i+=3) {
                 String techniquePropertyName = currentTechnique[i];
-                String techniqueValue = currentTechnique[!nullify?i+1:i+2];
-                JsonParser parser = new JsonParser();
-                jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(techniqueValue));
+                if(techniquePropertyName == null) {
+                    jsonElement.getAsJsonObject().add(currentTechnique[!nullify ? i + 1 : i + 2], new JsonPrimitive(REFLECTION_CANARY));
+                } else {
+                    String techniqueValue = currentTechnique[!nullify ? i + 1 : i + 2];
+                    JsonParser parser = new JsonParser();
+                    jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(techniqueValue));
+                }
             }
         }
         return jsonElement;
