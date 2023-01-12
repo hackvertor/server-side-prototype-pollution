@@ -257,9 +257,6 @@ public class PrototypePollutionBodyScan extends Scan {
     }
 
     public void doAttack(byte[] baseReq, String jsonString, IHttpService service, String[] currentTechnique, String attackType) {
-
-        Utilities.out("JSON:"+jsonString);
-
         if(!jsonString.trim().startsWith("{") && !jsonString.trim().startsWith("[")) {
             return;
         }
