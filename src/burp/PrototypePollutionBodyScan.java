@@ -19,14 +19,14 @@ public class PrototypePollutionBodyScan extends Scan {
     {
         {
             //__proto__
+            put("status", new String[]{
+                    "__proto__","{\"status\":510}","{\"status\":0}"
+            });
             put("spacing", new String[]{
                     "__proto__","{\"json spaces\":\" \"}","{\"json spaces\":\"\"}"
             });
             put("options", new String[]{
                     "__proto__","{\"head\":true}","{\"head\":false}"
-            });
-            put("status", new String[]{
-                    "__proto__","{\"status\":510}","{\"status\":0}"
             });
             put("exposedHeaders", new String[]{
                     "__proto__","{\"exposedHeaders\":[\""+CANARY+"\"]}","{\"exposedHeaders\":null}"
@@ -258,6 +258,8 @@ public class PrototypePollutionBodyScan extends Scan {
 
     public void doAttack(byte[] baseReq, String jsonString, IHttpService service, String[] currentTechnique, String attackType) {
 
+        Utilities.out("JSON:"+jsonString);
+
         if(!jsonString.trim().startsWith("{") && !jsonString.trim().startsWith("[")) {
             return;
         }
@@ -361,7 +363,8 @@ public class PrototypePollutionBodyScan extends Scan {
              }
          } else if(attackType.contains("status")) {
              Resp invalidJsonResp = makeInvalidJsonRequest(service, baseReq);
-             if(hasStatusCode(510, invalidJsonResp)) {
+             String response = Utilities.getBody(invalidJsonResp.getReq().getResponse());
+             if(hasStatusCode(510, invalidJsonResp) || responseHas(response, "\"statusCode\":510")) {
                  byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
                  Resp nullifyAttackRequestResp = request(service, nullifyAttackRequest, MAX_RETRIES);
@@ -371,7 +374,8 @@ public class PrototypePollutionBodyScan extends Scan {
                  }
 
                  Resp invalidJsonNullified = makeInvalidJsonRequest(service, baseReq);
-                 if(!hasStatusCode(510, invalidJsonNullified)) {
+                 String nullifiedResponse = Utilities.getBody(invalidJsonNullified.getReq().getResponse());
+                 if(!hasStatusCode(510, invalidJsonNullified) && !responseHas(nullifiedResponse, "\"statusCode\":510")) {
                      reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseReq, attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                  }
              }

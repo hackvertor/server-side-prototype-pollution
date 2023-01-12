@@ -156,7 +156,10 @@ public class PrototypePollutionParamScan extends ParamScan {
                 }
             } else if(attackType.contains("status")) {
                 Resp invalidJsonResp = makeInvalidJsonRequest(service, insertionPoint);
-                if(PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonResp)) {
+                String response = Utilities.getBody(invalidJsonResp.getReq().getResponse());
+                Boolean has510Status = PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonResp);
+                Boolean has510StatusInJson = PrototypePollutionBodyScan.responseHas(response, "\"statusCode\":510");
+                if(has510Status || has510StatusInJson) {
                     byte[] nullifyAttackRequest;
                     if(insertionPoint.getInsertionPointType() == IScannerInsertionPoint.INS_PARAM_JSON) {
                         nullifyAttackRequest = insertionPoint.buildRequest(nullifyInjection.getBytes());
@@ -172,7 +175,8 @@ public class PrototypePollutionParamScan extends ParamScan {
                     }
 
                     Resp invalidJsonNullified = makeInvalidJsonRequest(service, insertionPoint);
-                    if(!PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonNullified)) {
+                    String nullifiedResponse = Utilities.getBody(invalidJsonNullified.getReq().getResponse());
+                    if((has510Status && !PrototypePollutionBodyScan.hasStatusCode(510, invalidJsonNullified)) || (has510StatusInJson && !PrototypePollutionBodyScan.responseHas(nullifiedResponse, "\"statusCode\":510"))) {
                         PrototypePollutionBodyScan.reportIssue("PP JSON status", PrototypePollutionBodyScan.DETAIL, "High", "Firm", ".", baseRequestResponse.getRequest(), attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                     }
                 }
