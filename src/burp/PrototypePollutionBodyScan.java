@@ -19,51 +19,97 @@ public class PrototypePollutionBodyScan extends Scan {
     {
         {
             //__proto__
-            put("status", new String[]{
+            put("status __proto__", new String[]{
                     "__proto__","{\"status\":510}","{\"status\":0}"
             });
-            put("spacing", new String[]{
+            put("spacing __proto__", new String[]{
                     "__proto__","{\"json spaces\":\" \"}","{\"json spaces\":\"\"}"
             });
-            put("options", new String[]{
+            put("options __proto__", new String[]{
                     "__proto__","{\"head\":true}","{\"head\":false}"
             });
-            put("exposedHeaders", new String[]{
+            put("exposedHeaders __proto__", new String[]{
                     "__proto__","{\"exposedHeaders\":[\""+CANARY+"\"]}","{\"exposedHeaders\":null}"
             });
-            put("blitz", new String[]{
+            put("blitz __proto__", new String[]{
                     "__proto__","{\"__proto__\":{}}","{\"__proto__\":\"xyz\"}"
             });
-            put("reflection", new String[]{
+            put("reflection __proto__", new String[]{
                     null,"__proto__","__proto__x"
             });
             //constructor
-//            put("spacing constructor", new String[]{
-//                    "constructor","{\"prototype\":{\"json spaces\":\" \"}}","{\"prototype\":{\"json spaces\":\"\"}}"
-//            });
-//            put("options constructor", new String[]{
-//                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}"
-//            });
-//            put("status constructor", new String[]{
-//                    "constructor","{\"prototype\":{\"status\":510}}","{\"prototype\":{\"status\":0}}"
-//            });
-//            put("exposedHeaders constructor", new String[]{
-//                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}","{\"prototype\":{\"exposedHeaders\":null}}"
-//            });
-//            put("blitz constructor", new String[]{
-//                    "constructor","{\"prototype\":{\"__proto__\":{}}}","{\"prototype\":{\"__proto__\":\"xyz\"}}"
-//            });
+            put("spacing constructor", new String[]{
+                    "constructor","{\"prototype\":{\"json spaces\":\" \"}}","{\"prototype\":{\"json spaces\":\"\"}}"
+            });
+            put("options constructor", new String[]{
+                    "constructor","{\"prototype\":{\"head\":true}}","{\"prototype\":{\"head\":false}}"
+            });
+            put("status constructor", new String[]{
+                    "constructor","{\"prototype\":{\"status\":510}}","{\"prototype\":{\"status\":0}}"
+            });
+            put("exposedHeaders constructor", new String[]{
+                    "constructor","{\"prototype\":{\"exposedHeaders\":[\""+CANARY+"\"]}}","{\"prototype\":{\"exposedHeaders\":null}}"
+            });
+            put("blitz constructor", new String[]{
+                    "constructor","{\"prototype\":{\"__proto__\":{}}}","{\"prototype\":{\"__proto__\":\"xyz\"}}"
+            });
         }
     };
 
     PrototypePollutionBodyScan(String name) {
         super(name);
+        scanSettings.register("__proto__ techniques enabled", true, "This enables __proto__ based attacks");
+        scanSettings.register("constructor techniques enabled", false, "This enables constructor.prototype based attacks");
+        scanSettings.register("status technique", true, "This enables the status technique");
+        scanSettings.register("spacing technique", true, "This enables the spacing technique");
+        scanSettings.register("options technique", true, "This enables the options technique");
+        scanSettings.register("exposedHeaders technique", true, "This enables the exposedHeaders technique");
+        scanSettings.register("blitz technique", true, "This enables the blitz technique");
+        scanSettings.register("reflection technique", true, "This enables the reflection technique");
+        scanSettings.register("reflection technique", true, "This enables the reflection technique");
+        scanSettings.register("async technique", true, "This enables the async technique");
+    }
+    static Boolean shouldUseTechnique(Map.Entry<String, String[]> technique) {
+        if(!Utilities.globalSettings.getBoolean("__proto__ techniques enabled") && technique.getKey().contains("__proto__")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("constructor techniques enabled") && technique.getKey().contains("constructor")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("status technique") && technique.getKey().contains("status")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("spacing technique") && technique.getKey().contains("spacing")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("status technique") && technique.getKey().contains("status")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("options technique") && technique.getKey().contains("options")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("exposedHeaders technique") && technique.getKey().contains("exposedHeaders")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("blitz technique") && technique.getKey().contains("blitz")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("reflection technique") && technique.getKey().contains("reflection")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("async technique") && technique.getKey().contains("async")) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
         Utilities.out("--Running Body scan--");
         for (Map.Entry<String, String[]> technique : jsonTechniques.entrySet()) {
+            if(!shouldUseTechnique(technique)) {
+                continue;
+            }
             doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), technique.getKey());
         }
 
@@ -294,7 +340,7 @@ public class PrototypePollutionBodyScan extends Scan {
          }
          Utilities.out("Doing JSON"+(hasBody ? " Body " : " ") + attackType + " attack");
 
-         if(attackType.equals("reflection")) {
+         if(attackType.contains("reflection")) {
 
              Resp baseResp = request(service, baseReq, MAX_RETRIES);
 

@@ -9,40 +9,40 @@ public class PrototypePollutionBodyDotScan extends PrototypePollutionBodyScan {
     {
         {
             //__proto__
-            put("spacing", new String[]{
+            put("spacing  __proto__", new String[]{
                     "__proto__.json spaces","\" \"","\"\""
             });
-            put("options", new String[]{
+            put("options  __proto__", new String[]{
                     "__proto__.head","true","false"
             });
-            put("status", new String[]{
+            put("status  __proto__", new String[]{
                     "__proto__.status","510","0"
             });
-            put("exposedHeaders", new String[]{
+            put("exposedHeaders  __proto__", new String[]{
                     "__proto__.exposedHeaders","[\""+CANARY+"\"]","null"
             });
-            put("blitz1", new String[]{
+            put("blitz1  __proto__", new String[]{
                     "__proto__.__proto__","{}","\"xyz\""
             });
-            put("blitz2", new String[]{
+            put("blitz2  __proto__", new String[]{
                     "","null","\"xyz\""
             });
             //constructor
-//            put("spacing constructor", new String[]{
-//                    "constructor.prototype.json spaces","\" \"","\"\""
-//            });
-//            put("options constructor", new String[]{
-//                    "constructor.prototype.head","true","false"
-//            });
-//            put("status constructor", new String[]{
-//                    "constructor.prototype.status","510","0"
-//            });
-//            put("exposedHeaders constructor", new String[]{
-//                    "constructor.prototype.exposedHeaders","[\""+CANARY+"\"]","null"
-//            });
-//            put("blitz1 constructor", new String[]{
-//                    "constructor.prototype.__proto__","{}","\"xyz\""
-//            });
+            put("spacing constructor", new String[]{
+                    "constructor.prototype.json spaces","\" \"","\"\""
+            });
+            put("options constructor", new String[]{
+                    "constructor.prototype.head","true","false"
+            });
+            put("status constructor", new String[]{
+                    "constructor.prototype.status","510","0"
+            });
+            put("exposedHeaders constructor", new String[]{
+                    "constructor.prototype.exposedHeaders","[\""+CANARY+"\"]","null"
+            });
+            put("blitz1 constructor", new String[]{
+                    "constructor.prototype.__proto__","{}","\"xyz\""
+            });
         }
     };
     PrototypePollutionBodyDotScan(String name) {
@@ -52,6 +52,9 @@ public class PrototypePollutionBodyDotScan extends PrototypePollutionBodyScan {
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
         Utilities.out("--Running Body dot scan--");
         for (Map.Entry<String, String[]> technique : jsonTechniquesDot.entrySet()) {
+            if(!PrototypePollutionBodyScan.shouldUseTechnique(technique)) {
+                continue;
+            }
             doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), technique.getKey());
         }
 

@@ -7,6 +7,7 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
 
     PrototypePollutionAddJSPropertyScan(String name) {
         super(name);
+        scanSettings.register("js property technique", false, "This enables the js property technique");
         scanSettings.register("vulnerable response regex", PrototypePollutionJSPropertyParamScan.DEFAULT_RESPONSE_REGEX, "Regex used to see if the server behaves differently");
         scanSettings.register("valid property name", PrototypePollutionJSPropertyParamScan.DEFAULT_VALID_PROPERTY, "Valid property name that causes behaviour difference");
         scanSettings.register("valid property value", PrototypePollutionJSPropertyParamScan.DEFAULT_VALID_PROPERTY_VALUE, "Valid property value that causes behaviour difference");
@@ -16,11 +17,13 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
 
     @Override
     List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
-        Utilities.out("--Running Add JS Property scan--");
-        injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_COOKIE);
-        injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_BODY);
-        injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_URL);
-        injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_JSON);
+        if(Utilities.globalSettings.getBoolean("js property technique")) {
+            Utilities.out("--Running Add JS Property scan--");
+            injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_COOKIE);
+            injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_BODY);
+            injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_URL);
+            injectInsertionPoint(baseReq, service, IScannerInsertionPoint.INS_PARAM_JSON);
+        }
         return null;
     }
 

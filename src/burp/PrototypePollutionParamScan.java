@@ -21,6 +21,9 @@ public class PrototypePollutionParamScan extends ParamScan {
     public void injectInsertionPoint(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, Map<String, String[]> techniques) {
         IHttpService service = baseRequestResponse.getHttpService();
         for (Map.Entry<String, String[]> technique : techniques.entrySet()) {
+            if(!PrototypePollutionBodyScan.shouldUseTechnique(technique)) {
+                continue;
+            }
             String attackType = technique.getKey();
             String attackInjection = technique.getValue()[1];
             String nullifyInjection = technique.getValue()[2];
@@ -48,7 +51,7 @@ public class PrototypePollutionParamScan extends ParamScan {
             }
 
             Utilities.out("Doing param scan " + attackType + " attack");
-            if (attackType.equals("reflection")) {
+            if (attackType.contains("reflection")) {
                 byte[] req;
                 if(baseValue.equals("{}")) {
                     req = baseRequestResponse.getRequest().clone();

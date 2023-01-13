@@ -13,14 +13,19 @@ public class PrototypePollutionAsyncParamScan extends ParamScan {
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-        Utilities.out("--Running async param scan--");
-        injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionAsyncBodyScan.asyncTechniques);
+        if(Utilities.globalSettings.getBoolean("async technique")) {
+            Utilities.out("--Running async param scan--");
+            injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionAsyncBodyScan.asyncTechniques);
+        }
         return null;
     }
 
     public void injectInsertionPoint(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, Map<String, String[]> techniques) {
         IHttpService service = baseRequestResponse.getHttpService();
         for (Map.Entry<String, String[]> technique : techniques.entrySet()) {
+            if(!PrototypePollutionBodyScan.shouldUseTechnique(technique)) {
+                continue;
+            }
             String attackType = technique.getKey();
             String attackInjection = technique.getValue()[1];
             ArrayList<String> collabPayloads = new ArrayList<>();

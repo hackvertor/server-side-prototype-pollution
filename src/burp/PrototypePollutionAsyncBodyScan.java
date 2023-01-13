@@ -26,8 +26,13 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
 
     @Override
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
-        Utilities.out("--Running async body scan--");
+        if(Utilities.globalSettings.getBoolean("async technique")) {
+            Utilities.out("--Running async body scan--");
+        }
         for (Map.Entry<String, String[]> technique : asyncTechniques.entrySet()) {
+            if(!PrototypePollutionBodyScan.shouldUseTechnique(technique)) {
+                continue;
+            }
             ArrayList<String> collabPayloads = new ArrayList<>();
             technique.getValue()[1] = replacePlaceholderWithCollaboratorPayload(technique.getValue()[1], collabPayloads);
             doAttack(baseReq, Utilities.getBody(baseReq), service, technique, collabPayloads);
