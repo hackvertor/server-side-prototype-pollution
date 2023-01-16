@@ -11,6 +11,8 @@ public class PrototypePollutionBodyScan extends Scan {
     static final String DETAIL = "This application is vulnerable to Server side prototype pollution";
     static final String CANARY = "f1e3f7a9";
     static final String REFLECTION_CANARY = "d5a347a2";
+    static final String REFLECTION_VIA_PROTO_PROPERTY_NAME = "f1a987bd";
+    static final String REFLECTION_PROPERTY_NAME = "cadf19d0";
     static final Integer MAX_RETRIES = 1;
 
     static final String BLITZ_REGEX = "(?:Immutable.{1,10}prototype.{1,10}object|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}undefined|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}null)";
@@ -36,6 +38,12 @@ public class PrototypePollutionBodyScan extends Scan {
             });
             put("reflection __proto__", new String[]{
                     null,"__proto__","__proto__x"
+            });
+            put("non reflected property __proto__", new String[]{
+                    "__proto__","{\""+ REFLECTION_VIA_PROTO_PROPERTY_NAME +"\":\"foo\"}"
+                    ,null,
+                    REFLECTION_PROPERTY_NAME,
+                    REFLECTION_VIA_PROTO_PROPERTY_NAME
             });
             //constructor
             put("spacing constructor", new String[]{
@@ -66,7 +74,7 @@ public class PrototypePollutionBodyScan extends Scan {
         scanSettings.register("exposedHeaders technique", true, "This enables the exposedHeaders technique");
         scanSettings.register("blitz technique", true, "This enables the blitz technique");
         scanSettings.register("reflection technique", true, "This enables the reflection technique");
-        scanSettings.register("reflection technique", true, "This enables the reflection technique");
+        scanSettings.register("non reflected property technique", true, "This enables the non reflected property technique");
         scanSettings.register("async technique", true, "This enables the async technique");
     }
     static Boolean shouldUseTechnique(Map.Entry<String, String[]> technique) {
@@ -95,6 +103,9 @@ public class PrototypePollutionBodyScan extends Scan {
             return false;
         }
         if(!Utilities.globalSettings.getBoolean("reflection technique") && technique.getKey().contains("reflection")) {
+            return false;
+        }
+        if(!Utilities.globalSettings.getBoolean("non reflected property technique") && technique.getKey().contains("non reflected property")) {
             return false;
         }
         if(!Utilities.globalSettings.getBoolean("async technique") && technique.getKey().contains("async")) {
@@ -344,7 +355,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
              Resp baseResp = request(service, baseReq, MAX_RETRIES);
 
-             if(baseResp.failed() || baseResp.getReq().getResponse() == null) {
+             if (baseResp.failed() || baseResp.getReq().getResponse() == null) {
                  return;
              }
              String baseResponseStr = Utilities.getBody(baseResp.getReq().getResponse());
@@ -364,6 +375,11 @@ public class PrototypePollutionBodyScan extends Scan {
                  if (responseHas(nullifyResponseStr, REFLECTION_CANARY)) {
                      reportIssue("PP JSON reflection", DETAIL, "High", "Firm", ".", baseReq, baseResp, attackResp, nullifyResponse);
                  }
+             }
+         } else  if(attackType.contains("non reflected property")) {
+             String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
+             if (responseHas(attackResponse, REFLECTION_PROPERTY_NAME) && !responseHas(attackResponse, REFLECTION_VIA_PROTO_PROPERTY_NAME)) {
+                 reportIssue("PP JSON non reflected property", DETAIL, "High", "Firm", ".", baseReq, attackResp);
              }
          } else if(attackType.contains("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
@@ -538,13 +554,19 @@ public class PrototypePollutionBodyScan extends Scan {
             for (Map.Entry<String, JsonElement> jsonEntry : jsonObjectEntrySet) {
                 traverseJsonTreeAndInject(jsonEntry.getValue(), currentTechnique, nullify);
             }
-
-            for(int i=0;i<currentTechnique.length; i+=3) {
-                String techniquePropertyName = currentTechnique[i];
-                if(techniquePropertyName == null) {
-                    jsonElement.getAsJsonObject().add(currentTechnique[!nullify ? i + 1 : i + 2], new JsonPrimitive(REFLECTION_CANARY));
+            if(currentTechnique.length > 3) {
+                JsonParser parser = new JsonParser();
+                String techniquePropertyName = currentTechnique[0];
+                String techniqueValue = currentTechnique[1];
+                jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(techniqueValue));
+                jsonElement.getAsJsonObject().add(currentTechnique[3], new JsonPrimitive("foo"));
+                jsonElement.getAsJsonObject().add(currentTechnique[4], new JsonPrimitive("foo"));
+            } else {
+                String techniquePropertyName = currentTechnique[0];
+                if (techniquePropertyName == null) {
+                    jsonElement.getAsJsonObject().add(currentTechnique[!nullify ? 1 : 2], new JsonPrimitive(REFLECTION_CANARY));
                 } else {
-                    String techniqueValue = currentTechnique[!nullify ? i + 1 : i + 2];
+                    String techniqueValue = currentTechnique[!nullify ? 1 : 2];
                     JsonParser parser = new JsonParser();
                     jsonElement.getAsJsonObject().add(techniquePropertyName, parser.parse(techniqueValue));
                 }
