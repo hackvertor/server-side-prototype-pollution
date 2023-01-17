@@ -161,6 +161,7 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
 
     PrototypePollutionAsyncBodyScan(String name) {
         super(name);
+        scanSettings.register("async technique", true, "This enables the async technique");
     }
 
 }
