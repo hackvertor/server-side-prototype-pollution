@@ -8,7 +8,9 @@ import java.util.regex.Pattern;
 
 public class PrototypePollutionBodyScan extends Scan {
 
-    static final String DETAIL = "This application is vulnerable to Server side prototype pollution";
+    static final String DETAIL = "Server-Side Prototype Pollution was found on this web site.";
+
+    static final String REMEDIATION = "Ensure that property keys, such as __proto__, constructor, and prototype are correctly filtered when merging objects. When creating objects, we recommend using the Object.create(null) API to ensure that your object does not inherit from the Object.prototype and, therefore, won't be vulnerable to prototype pollution.";
     static final String CANARY = "f1e3f7a9";
     static final String REFLECTION_CANARY = "d5a347a2";
     static final String REFLECTION_VIA_PROTO_PROPERTY_NAME = "f1a987bd";
@@ -361,7 +363,7 @@ public class PrototypePollutionBodyScan extends Scan {
              String baseResponseStr = Utilities.getBody(baseResp.getReq().getResponse());
              String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
              if (responseHas(baseResponseStr, REFLECTION_CANARY)) {
-                 reportIssue("PP JSON reflection", DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp);
+                 reportIssue("Potential server side prototype pollution via object reflection", DETAIL + " Using the technique "+attackType+".", "Medium", "Firm", REMEDIATION, baseReq, attackResp, baseResp);
              } else if (!responseHas(attackResponse, REFLECTION_CANARY)) {
                  byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
@@ -373,13 +375,13 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                  if (responseHas(nullifyResponseStr, REFLECTION_CANARY)) {
-                     reportIssue("PP JSON reflection", DETAIL, "High", "Firm", ".", baseReq, baseResp, attackResp, nullifyResponse);
+                     reportIssue("Potential server side prototype pollution via object reflection", DETAIL + " Using the technique "+attackType+".", "Medium", "Firm", REMEDIATION, baseReq, baseResp, attackResp, nullifyResponse);
                  }
              }
          } else  if(attackType.contains("non reflected property")) {
              String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
              if (responseHas(attackResponse, REFLECTION_PROPERTY_NAME) && !responseHas(attackResponse, REFLECTION_VIA_PROTO_PROPERTY_NAME)) {
-                 reportIssue("PP JSON non reflected property", DETAIL, "High", "Firm", ".", baseReq, attackResp);
+                 reportIssue("Potential server side prototype pollution via non reflected property", DETAIL + " Using the technique "+attackType+".", "Medium", "Firm", REMEDIATION, baseReq, attackResp);
              }
          } else if(attackType.contains("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
@@ -395,7 +397,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                  if((hasCorrectResponse && !responseHas(nullifyResponseStr, BLITZ_REGEX)) || (hasStatusCode500 && !hasStatusCode(500, nullifyResponse))) {
-                     reportIssue("PP JSON Blitz", DETAIL, "High", "Firm", ".", baseReq, attackResp, nullifyResponse);
+                     reportIssue("Server side prototype pollution via JSON Blitz", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, nullifyResponse);
                  }
              }
          } else if(attackType.contains("spacing")) {
@@ -417,7 +419,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                  if(!hasSpacing(nullifyResponseStr)) {
-                     reportIssue("PP JSON spacing", DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp, nullifyResponse);
+                     reportIssue("Server side prototype pollution via JSON spacing", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, baseResp, nullifyResponse);
                  }
              }
          } else if(attackType.contains("status")) {
@@ -435,7 +437,7 @@ public class PrototypePollutionBodyScan extends Scan {
                  Resp invalidJsonNullified = makeInvalidJsonRequest(service, baseReq);
                  String nullifiedResponse = Utilities.getBody(invalidJsonNullified.getReq().getResponse());
                  if(!hasStatusCode(510, invalidJsonNullified) && !responseHas(nullifiedResponse, "\"statusCode\":510")) {
-                     reportIssue("PP JSON status", DETAIL, "High", "Firm", ".", baseReq, attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
+                     reportIssue("Server side prototype pollution via JSON status", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
                  }
              }
          } else if(attackType.contains("options")) {
@@ -463,7 +465,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                  if(nullifiedAllow.contains("head")) {
-                     reportIssue("PP JSON options", DETAIL, "High", "Firm", ".", baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                     reportIssue("Server side prototype pollution via JSON options", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                  }
              }
          } else if(attackType.contains("exposedHeaders")) {
@@ -491,7 +493,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifiedAccessControlExposeHeaders = Utilities.getHeader(nullifyResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
                  if(!nullifiedAccessControlExposeHeaders.contains(CANARY)) {
-                     reportIssue("PP JSON exposedHeaders", DETAIL, "High", "Firm", ".", baseReq, attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
+                     reportIssue("Server side prototype pollution via JSON exposedHeaders", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
                  }
              }
          }
