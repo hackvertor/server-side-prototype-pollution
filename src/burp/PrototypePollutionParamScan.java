@@ -68,7 +68,7 @@ public class PrototypePollutionParamScan extends ParamScan {
                 String attackResponseStr = Utilities.getBody(attackResp.getReq().getResponse());
 
                 if (PrototypePollutionBodyScan.responseHas(response, PrototypePollutionBodyScan.REFLECTION_CANARY)) {
-                    PrototypePollutionBodyScan.reportIssue("Potential Server side prototype pollution via object reflection", PrototypePollutionBodyScan.DETAIL + " Using the technique "+attackType+".", "Medium", "Firm", PrototypePollutionBodyScan.REMEDIATION, baseRequestResponse.getRequest(), attackResp, baseResp);
+                    PrototypePollutionBodyScan.reportIssue("Potential Server side prototype pollution via object reflection", "Potential " + PrototypePollutionBodyScan.DETAIL + " Using the technique "+attackType+".", "Medium", "Firm", PrototypePollutionBodyScan.REMEDIATION, baseRequestResponse.getRequest(), attackResp, baseResp);
                 } else if (!PrototypePollutionBodyScan.responseHas(attackResponseStr, PrototypePollutionBodyScan.REFLECTION_CANARY)) {
                     byte[] nullifyAttackRequest;
                     if (insertionPoint.getInsertionPointType() == IScannerInsertionPoint.INS_PARAM_JSON) {
@@ -87,13 +87,13 @@ public class PrototypePollutionParamScan extends ParamScan {
 
                     String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                     if (PrototypePollutionBodyScan.responseHas(nullifyResponseStr, PrototypePollutionBodyScan.REFLECTION_CANARY)) {
-                        PrototypePollutionBodyScan.reportIssue("Potential Server side prototype pollution via object reflection", PrototypePollutionBodyScan.DETAIL + " Using the technique", "High", "Firm", PrototypePollutionBodyScan.REMEDIATION, baseRequestResponse.getRequest(), attackResp, baseResp);
+                        PrototypePollutionBodyScan.reportIssue("Potential Server side prototype pollution via object reflection", "Potential " + PrototypePollutionBodyScan.DETAIL + " Using the technique", "Medium", "Firm", PrototypePollutionBodyScan.REMEDIATION, baseRequestResponse.getRequest(), attackResp, baseResp);
                     }
                 }
             } else if(attackType.contains("non reflected property")) {
                 String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
                 if (PrototypePollutionBodyScan.responseHas(attackResponse, PrototypePollutionBodyScan.REFLECTION_PROPERTY_NAME) && !PrototypePollutionBodyScan.responseHas(attackResponse, PrototypePollutionBodyScan.REFLECTION_VIA_PROTO_PROPERTY_NAME)) {
-                    PrototypePollutionBodyScan.reportIssue("Server side prototype pollution via JSON non reflected property", PrototypePollutionBodyScan.DETAIL + " Using the technique", "High", "Firm", PrototypePollutionBodyScan.REMEDIATION, baseRequestResponse.getRequest(), attackResp);
+                    PrototypePollutionBodyScan.reportIssue("Server side prototype pollution via JSON non reflected property", "Potential " + PrototypePollutionBodyScan.DETAIL + " Using the technique", "Medium", "Firm", PrototypePollutionBodyScan.REMEDIATION, baseRequestResponse.getRequest(), attackResp);
                 }
             } else if(attackType.contains("blitz")) {
                 byte[] req = baseRequestResponse.getRequest();
