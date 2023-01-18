@@ -123,7 +123,14 @@ public class PrototypePollutionBodyScan extends Scan {
             if(!shouldUseTechnique(technique)) {
                 continue;
             }
-            doAttack(baseReq, Utilities.getBody(baseReq), service, technique.getValue(), technique.getKey());
+            String baseReqStr = Utilities.getBody(baseReq);
+            byte[] baseReqModified = baseReq;
+            if(technique.getKey().contains("spacing") && responseHas(baseReqStr, "^\\s*\\{\\s*\\}\\s*$")) {
+                baseReqStr = "{\"test\":\"test\"}";
+                baseReqModified = Utilities.setBody(baseReq, baseReqStr);
+                baseReqModified = Utilities.fixContentLength(baseReqModified);
+            }
+            doAttack(baseReqModified, baseReqStr, service, technique.getValue(), technique.getKey());
         }
 
         return null;
