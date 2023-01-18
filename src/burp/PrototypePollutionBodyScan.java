@@ -18,7 +18,7 @@ public class PrototypePollutionBodyScan extends Scan {
     static final Integer MAX_RETRIES = 1;
 
     static final String BLITZ_REGEX = "(?:Immutable.{1,10}prototype.{1,10}object|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}undefined|Cannot.{1,10}read.{1,10}properties.{1,10}of.{1,10}null)";
-
+    static final String SPACING_REGEX = "^\\s*[{\\[]\\s+";
     static final Map<String, String[]> jsonTechniques = new HashMap<String, String[]>()
     {
         {
@@ -385,14 +385,14 @@ public class PrototypePollutionBodyScan extends Scan {
                  if (responseHas(nullifyResponseStr, REFLECTION_CANARY)) {
                      IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResponse.getReq(), null, PrototypePollutionJSPropertyParamScan.getMatches(nullifyResponse.getReq().getResponse(), REFLECTION_CANARY.getBytes()));
                      IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), REFLECTION_CANARY.getBytes()), null);
-                     reportIssue("Potential server side prototype pollution via object reflection", "Potential " + DETAIL + " Using the technique "+attackType+". The scan found that the response did not contain the canary <b>"+REFLECTION_CANARY+"</b> in the attack response. Then later with a follow up the canary was found when the attack was nullified.", "Medium", "Firm", REMEDIATION, baseReq, baseResp, new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
+                     reportIssue("Potential server side prototype pollution via object reflection", "Potential " + DETAIL + ". Using the technique "+attackType+". The scan found that the response did not contain the canary <b>"+REFLECTION_CANARY+"</b> in the attack response. Then later with a follow up the canary was found when the attack was nullified.", "Medium", "Firm", REMEDIATION, baseReq, baseResp, new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
                  }
              }
          } else  if(attackType.contains("non reflected property")) {
              String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
              if (responseHas(attackResponse, REFLECTION_PROPERTY_NAME) && !responseHas(attackResponse, REFLECTION_VIA_PROTO_PROPERTY_NAME)) {
                  IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), REFLECTION_VIA_PROTO_PROPERTY_NAME.getBytes()), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getResponse(), REFLECTION_PROPERTY_NAME.getBytes()));
-                 reportIssue("Potential server side prototype pollution via non reflected property", "Potential " + DETAIL + " Using the technique "+attackType+". Two duplicate property keys where used, one which adds the property to the Object prototype and one that added regular property. The regular property was not shown when using a duplicate inherited property. This is a strong indicator of prototype pollution. ", "Medium", "Firm", REMEDIATION, baseReq, new Resp(attackRespWithMarkers));
+                 reportIssue("Potential server side prototype pollution via non reflected property", "Potential " + DETAIL + ". Using the technique "+attackType+". Duplicate property keys where used, one which adds the property to the Object prototype and one that added regular property. The regular property was not shown when using a duplicate inherited property. This is a strong indicator of prototype pollution. ", "Medium", "Firm", REMEDIATION, baseReq, new Resp(attackRespWithMarkers));
              }
          } else if(attackType.contains("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
@@ -408,7 +408,8 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                  if((hasCorrectResponse && !responseHas(nullifyResponseStr, BLITZ_REGEX)) || (hasStatusCode500 && !hasStatusCode(500, nullifyResponse))) {
-                     reportIssue("Server side prototype pollution via JSON Blitz", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, nullifyResponse);
+                     IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), null, PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(attackResp, BLITZ_REGEX, false));
+                     reportIssue("Server side prototype pollution via JSON Blitz", DETAIL + " Using the technique "+attackType+". This technique looks for immutable error messages when trying to assign __proto__.__proto__ with objects.", "High", "Firm", REMEDIATION, baseReq, new Resp(attackRespWithMarkers), nullifyResponse);
                  }
              }
          } else if(attackType.contains("spacing")) {
@@ -430,7 +431,8 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                  if(!hasSpacing(nullifyResponseStr)) {
-                     reportIssue("Server side prototype pollution via JSON spacing", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, baseResp, nullifyResponse);
+                     IHttpRequestResponseWithMarkers baseRespWithMarkers = Utilities.callbacks.applyMarkers(baseResp.getReq(), null, PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(baseResp, PrototypePollutionBodyScan.SPACING_REGEX, true));
+                     reportIssue("Server side prototype pollution via JSON spacing", DETAIL + " Using the technique "+attackType+". It seems possible to alter the JSON spacing of a response using prototype pollution.", "High", "Firm", REMEDIATION, baseReq, attackResp, new Resp(baseRespWithMarkers), nullifyResponse);
                  }
              }
          } else if(attackType.contains("status")) {
@@ -448,7 +450,8 @@ public class PrototypePollutionBodyScan extends Scan {
                  Resp invalidJsonNullified = makeInvalidJsonRequest(service, baseReq);
                  String nullifiedResponse = Utilities.getBody(invalidJsonNullified.getReq().getResponse());
                  if(!hasStatusCode(510, invalidJsonNullified) && !responseHas(nullifiedResponse, "\"statusCode\":510")) {
-                     reportIssue("Server side prototype pollution via JSON status", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, invalidJsonResp, nullifyAttackRequestResp, invalidJsonNullified);
+                     IHttpRequestResponseWithMarkers invalidJsonRespWithMarkers = Utilities.callbacks.applyMarkers(invalidJsonResp.getReq(), null, PrototypePollutionJSPropertyParamScan.getMatches(invalidJsonResp.getReq().getResponse(), "\"statusCode\":510".getBytes()));
+                     reportIssue("Server side prototype pollution via JSON status", DETAIL + " Using the technique "+attackType+". This technique poisons the status property which changes the status code of the response when processing invalid JSON.", "High", "Firm", REMEDIATION, baseReq, attackResp, new Resp(invalidJsonRespWithMarkers), nullifyAttackRequestResp, invalidJsonNullified);
                  }
              }
          } else if(attackType.contains("options")) {
@@ -476,7 +479,7 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifiedAllow = Utilities.getHeader(nullifyOptionsResp.getReq().getResponse(), "Allow").toLowerCase();
                  if(nullifiedAllow.contains("head")) {
-                     reportIssue("Server side prototype pollution via JSON options", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
+                     reportIssue("Server side prototype pollution via JSON options", DETAIL + " Using the technique "+attackType+". This technique uses an OPTIONS response to see if the head method has been removed as the result of prototype pollution.", "High", "Firm", REMEDIATION, baseReq, attackResp, optionsResp, nullifyAttackRequestResp, nullifyOptionsResp);
                  }
              }
          } else if(attackType.contains("exposedHeaders")) {
@@ -504,7 +507,8 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifiedAccessControlExposeHeaders = Utilities.getHeader(nullifyResp.getReq().getResponse(), "Access-Control-Expose-Headers").toLowerCase();
                  if(!nullifiedAccessControlExposeHeaders.contains(CANARY)) {
-                     reportIssue("Server side prototype pollution via JSON exposedHeaders", DETAIL + " Using the technique "+attackType+".", "High", "Firm", REMEDIATION, baseReq, attackResp, baseResp, nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
+                     IHttpRequestResponseWithMarkers baseRespRespWithMarkers = Utilities.callbacks.applyMarkers(baseResp.getReq(), null, PrototypePollutionJSPropertyParamScan.getMatches(baseResp.getReq().getResponse(), CANARY.getBytes()));
+                     reportIssue("Server side prototype pollution via JSON exposedHeaders", DETAIL + " Using the technique "+attackType+". This technique pollutes exposedHeaders to add a header to a CORS response.", "High", "Firm", REMEDIATION, baseReq, attackResp, new Resp(baseRespRespWithMarkers), nullifyAttackRequestResp, nullifyAttackRequestResp, nullifyResp);
                  }
              }
          }
@@ -521,9 +525,8 @@ public class PrototypePollutionBodyScan extends Scan {
      }
 
     static Boolean hasSpacing(String response) {
-        String responseStart = response.substring(0,response.length() > 20 ? 20 : response.length());
-        Pattern regex = Pattern.compile("^\\s*[{\\[]\\s+", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = regex.matcher(responseStart);
+        Pattern regex = Pattern.compile(PrototypePollutionBodyScan.SPACING_REGEX, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = regex.matcher(response);
         return matcher.find();
     }
 

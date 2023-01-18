@@ -47,7 +47,7 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
         if(attackResp.getReq().getResponse() != null && regexResponse(attackResp)) {
             Resp nullifyResp = request(service, nullifyReq, PrototypePollutionBodyScan.MAX_RETRIES);
             if(nullifyResp.getReq().getResponse() != null && !regexResponse(nullifyResp)) {
-                IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), getRegexMarkerPositions(attackResp, regex));
+                IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), getRegexMarkerPositions(attackResp, regex, false));
                 IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
                 PrototypePollutionBodyScan.reportIssue("Property param scan using "+validProperty, "The parameter "+insertionPoint.getInsertionPointName()+" was identified and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseRequestResponse.getRequest(), new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
             }
@@ -55,13 +55,18 @@ public class PrototypePollutionJSPropertyParamScan extends ParamScan {
 
     }
 
-    static List<int[]> getRegexMarkerPositions(Resp response, String regex) {
+    static List<int[]> getRegexMarkerPositions(Resp response, String regex, boolean matchBody) {
         String responseStr = Utilities.helpers.bytesToString(response.getReq().getResponse());
+        int bodyStart = 0;
+        if(matchBody) {
+            bodyStart = Utilities.getBodyStart(response.getReq().getResponse());
+            responseStr = Utilities.getBody(response.getReq().getResponse());
+        }
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(responseStr);
         List<int[]> matches = new ArrayList<int[]>();
         while (m.find()) {
-            matches.add(new int[] { m.start(), m.end() });
+            matches.add(new int[] { bodyStart + m.start(), bodyStart + m.end() });
         }
         return matches;
     }

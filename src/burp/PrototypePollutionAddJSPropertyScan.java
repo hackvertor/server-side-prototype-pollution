@@ -80,7 +80,7 @@ public class PrototypePollutionAddJSPropertyScan extends Scan {
         if(attackResp.getReq().getResponse() != null && PrototypePollutionJSPropertyParamScan.regexResponse(attackResp)) {
             Resp nullifyResp = request(service, nullifyReq, PrototypePollutionBodyScan.MAX_RETRIES);
             if(nullifyResp.getReq().getResponse() != null && !PrototypePollutionJSPropertyParamScan.regexResponse(nullifyResp)) {
-                IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(attackResp, regex));
+                IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), validProperty.getBytes()), PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(attackResp, regex, false));
                 IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(nullifyResp.getReq().getRequest(), invalidProperty.getBytes()),null);
                 PrototypePollutionBodyScan.reportIssue("Add property scan using "+validProperty, "An added parameter "+validProperty+" was added to the request and a regex \""+regex+"\" was used to see if it causes a response difference.", "Low", "Firm", ".", baseReq, new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
             }
