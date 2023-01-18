@@ -370,7 +370,8 @@ public class PrototypePollutionBodyScan extends Scan {
              String baseResponseStr = Utilities.getBody(baseResp.getReq().getResponse());
              String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
              if (responseHas(baseResponseStr, REFLECTION_CANARY)) {
-                 reportIssue("Potential server side prototype pollution via object reflection", "Potential " + DETAIL + " Using the technique "+attackType+". The scan found the canary <b>"+REFLECTION_CANARY+"</b> in the base response when doing a follow up without the canary in the request. This could mean that you are able to persist modifications to an object which could mean there is prototype pollution.", "Medium", "Firm", REMEDIATION, baseReq, attackResp, baseResp);
+                 IHttpRequestResponseWithMarkers baseRespWithMarkers = Utilities.callbacks.applyMarkers(baseResp.getReq(), null, PrototypePollutionJSPropertyParamScan.getMatches(baseResp.getReq().getResponse(), REFLECTION_CANARY.getBytes()));
+                 reportIssue("Potential server side prototype pollution via object reflection", "Potential " + DETAIL + " Using the technique "+attackType+". The scan found the canary <b>"+REFLECTION_CANARY+"</b> in the base response when doing a follow up without the canary in the request. This could mean that you are able to persist modifications to an object which could mean there is prototype pollution.", "Medium", "Firm", REMEDIATION, baseReq, attackResp, new Resp(baseRespWithMarkers));
              } else if (!responseHas(attackResponse, REFLECTION_CANARY)) {
                  byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
                  request(service, nullifyAttackRequest, MAX_RETRIES);
@@ -382,13 +383,16 @@ public class PrototypePollutionBodyScan extends Scan {
 
                  String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
                  if (responseHas(nullifyResponseStr, REFLECTION_CANARY)) {
-                     reportIssue("Potential server side prototype pollution via object reflection", "Potential " + DETAIL + " Using the technique "+attackType+". The scan found that the response did not contain the canary <b>"+REFLECTION_CANARY+"</b> in the attack response. Then later with a follow up the canary was found when the attack was nullified.", "Medium", "Firm", REMEDIATION, baseReq, baseResp, attackResp, nullifyResponse);
+                     IHttpRequestResponseWithMarkers nullifyRespWithMarkers = Utilities.callbacks.applyMarkers(nullifyResponse.getReq(), null, PrototypePollutionJSPropertyParamScan.getMatches(nullifyResponse.getReq().getResponse(), REFLECTION_CANARY.getBytes()));
+                     IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), REFLECTION_CANARY.getBytes()), null);
+                     reportIssue("Potential server side prototype pollution via object reflection", "Potential " + DETAIL + " Using the technique "+attackType+". The scan found that the response did not contain the canary <b>"+REFLECTION_CANARY+"</b> in the attack response. Then later with a follow up the canary was found when the attack was nullified.", "Medium", "Firm", REMEDIATION, baseReq, baseResp, new Resp(attackRespWithMarkers), new Resp(nullifyRespWithMarkers));
                  }
              }
          } else  if(attackType.contains("non reflected property")) {
              String attackResponse = Utilities.getBody(attackResp.getReq().getResponse());
              if (responseHas(attackResponse, REFLECTION_PROPERTY_NAME) && !responseHas(attackResponse, REFLECTION_VIA_PROTO_PROPERTY_NAME)) {
-                 reportIssue("Potential server side prototype pollution via non reflected property", "Potential " + DETAIL + " Using the technique "+attackType+". Two duplicate property keys where used, one which adds the property to the Object prototype and one that added regular property. The regular property was not shown when using a duplicate inherited property. This is a strong indicator of prototype pollution. ", "Medium", "Firm", REMEDIATION, baseReq, attackResp);
+                 IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getRequest(), REFLECTION_VIA_PROTO_PROPERTY_NAME.getBytes()), PrototypePollutionJSPropertyParamScan.getMatches(attackResp.getReq().getResponse(), REFLECTION_PROPERTY_NAME.getBytes()));
+                 reportIssue("Potential server side prototype pollution via non reflected property", "Potential " + DETAIL + " Using the technique "+attackType+". Two duplicate property keys where used, one which adds the property to the Object prototype and one that added regular property. The regular property was not shown when using a duplicate inherited property. This is a strong indicator of prototype pollution. ", "Medium", "Firm", REMEDIATION, baseReq, new Resp(attackRespWithMarkers));
              }
          } else if(attackType.contains("blitz")) {
              String response = Utilities.getBody(attackResp.getReq().getResponse());
