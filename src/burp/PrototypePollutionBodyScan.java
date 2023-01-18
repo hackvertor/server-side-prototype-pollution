@@ -611,6 +611,7 @@ public class PrototypePollutionBodyScan extends Scan {
                 JsonElement jsonElement = parser.parse(body);
                 jsonElement = traverseJsonTreeAndInject(jsonElement, new String[]{propertyName, propertyValue}, false);
                 modifiedReq = Utilities.setBody(req,jsonElement.toString());
+                modifiedReq = Utilities.fixContentLength(modifiedReq);
                 return modifiedReq;
             } catch (JsonSyntaxException e) {
                 Utilities.err("Invalid JSON:" + e);
