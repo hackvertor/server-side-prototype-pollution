@@ -573,7 +573,9 @@ public class PrototypePollutionBodyScan extends Scan {
             } else {
                 String techniquePropertyName = currentTechnique[0];
                 if (techniquePropertyName == null) {
-                    jsonElement.getAsJsonObject().add(currentTechnique[!nullify ? 1 : 2], new JsonPrimitive(REFLECTION_CANARY));
+                    JsonObject obj = new JsonObject();
+                    obj.add(generateRandomString(), new JsonPrimitive(REFLECTION_CANARY));
+                    jsonElement.getAsJsonObject().add(currentTechnique[!nullify ? 1 : 2], obj);
                 } else {
                     String techniqueValue = currentTechnique[!nullify ? 1 : 2];
                     JsonParser parser = new JsonParser();
@@ -582,6 +584,10 @@ public class PrototypePollutionBodyScan extends Scan {
             }
         }
         return jsonElement;
+    }
+
+    static String generateRandomString() {
+        return UUID.randomUUID().toString();
     }
 
     static IParameter createParameter(String paramName, String paramValue, byte insertionPointType) {
