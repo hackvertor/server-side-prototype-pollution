@@ -7,11 +7,11 @@ import java.util.regex.Pattern;
 
 public class PrototypePollutionJSPropertyParamScan extends ParamScan {
 
-    static final String DEFAULT_RESPONSE_REGEX = PrototypePollutionBodyScan.BLITZ_REGEX;
-    static public final String DEFAULT_VALID_PROPERTY = "__proto__.__proto__";
-    static public final String DEFAULT_VALID_PROPERTY_VALUE = "{}";
-    static public final String DEFAULT_INVALID_PROPERTY = "__proto__.y";
-    static public final String DEFAULT_INVALID_PROPERTY_VALUE = "123";
+    static final String DEFAULT_RESPONSE_REGEX = "native.{1,10}code";
+    static public final String DEFAULT_VALID_PROPERTY = "constructor";
+    static public final String DEFAULT_VALID_PROPERTY_VALUE = "constructor";
+    static public final String DEFAULT_INVALID_PROPERTY = "constxructor";
+    static public final String DEFAULT_INVALID_PROPERTY_VALUE = "constxructor";
 
     public PrototypePollutionJSPropertyParamScan(String name) {
         super(name);
