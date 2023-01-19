@@ -55,8 +55,8 @@ class Monitor implements Runnable, IExtensionStateListener {
         if (rawDetail == null) {
             rawDetail = interaction.getProperty("raw_query");
         }
-
-        String message = "The collaborator was contacted by <b>" + ipAddress;
+        String message = "Server side prototype pollution was found asynchronously. See the request and response to view the technique used.<br/><br/>";
+        message += "The collaborator was contacted by <b>" + ipAddress;
         message +=  "</b>";
 
         if(metaReq != null) {
@@ -86,7 +86,7 @@ class Monitor implements Runnable, IExtensionStateListener {
         }
         if(req != null) {
             Utilities.callbacks.addScanIssue(
-                new CustomScanIssue(req.getHttpService(), reqInfo.getUrl(), new IHttpRequestResponse[]{req}, "Server side prototype pollution Collaborator Pingback (" + interaction.getProperty("type") + "): ", message + interaction.getProperties().toString(), severity, "Certain", "Panic")
+                new CustomScanIssue(req.getHttpService(), reqInfo.getUrl(), new IHttpRequestResponse[]{req}, "Server Side Prototype Pollution Collaborator pingback (" + interaction.getProperty("type") + "): ", message + interaction.getProperties().toString(), severity, "Certain", PrototypePollutionBodyScan.REMEDIATION)
             );
         } else {
             URL url = null;
