@@ -1,13 +1,13 @@
-Uuid: 17d2949a985c4b7ca092728dba871943
+Uuid:
 ExtensionType: 1
-Name: Param Miner
-RepoName: param-miner
-ScreenVersion: 1.4c
-SerialVersion: 22
+Name: Server side prototype pollution scanner
+RepoName: server-side-prototype-pollution
+ScreenVersion: 1.0.3
+SerialVersion:
 MinPlatformVersion: 0
 ProOnly: False
-Author: James 'albinowax' Kettle, PortSwigger Web Security
-ShortDescription: This extension identifies hidden, unlinked parameters. It's particularly useful for finding web cache poisoning vulnerabilities.
-EntryPoint: build/libs/param-miner-all.jar
+Author: Gareth Heyes, PortSwigger Web Security
+ShortDescription: This extension finds server side prototype pollution vulnerabilities.
+EntryPoint: build/libs/server-side-prototype-pollution-all.jar
 BuildCommand: ./gradlew build fatJar
 SupportedProducts: Pro, Community
