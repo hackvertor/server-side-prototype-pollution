@@ -29,64 +29,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         new Utilities(callbacks, new HashMap<>(), name);
 
-        // config only (currently param-guess displays everything)
-        configSettings.register("Add 'fcbz' cachebuster", false, "Add a static cache-buster to all outbound requests, to avoid manual cache poisoning probes affecting other users");
-        configSettings.register("Add dynamic cachebuster", false, "Add a dynamic cache-buster to all requests, to avoid seeing cached responses");
-        //configSettings.register("Add header cachebuster", false);
-        configSettings.register("learn observed words", false, "During Burp's passive scanning, record all words seen in the response and use them when guessing parameters. ");
-        configSettings.register("enable auto-mine", false, "Automatically launch param guessing attacks on traffic as it passes through the proxy");
-        configSettings.register("auto-mine headers", false, "When auto-mining proxied traffic, guess headers");
-        configSettings.register("auto-mine cookies", false, "When auto-mining proxied traffic, guess cookies");
-        configSettings.register("auto-mine params", false, "When auto-mining proxied traffic, guess parameters");
-        configSettings.register("auto-nest params", false, "When guessing parameters in JSON, attempt to guess deeper in nested structures. Might not work.");
-
-        // param-guess only
-        //guessSettings.importSettings(globalSettings);
-        guessSettings.register("learn observed words", false);
-        guessSettings.register("skip boring words", true, "When mining headers, don't check for well known and typically not very exciting headers");
-        guessSettings.register("only report unique params", false, "Only report a parameter with a given name once, regardless of how many endpoints are scanned");
-        guessSettings.register("response", true, "Extract words from the target request, and use these to guess params");
-        guessSettings.register("request", true, "Extract words from the target response, and use these to guess params. Highly recommended.");
-        guessSettings.register("use basic wordlist", true, "When guessing params, use the core wordlist");
-        guessSettings.register("use bonus wordlist", false, "When guessing params, also use a generic wordlist");
-        guessSettings.register("use assetnote params", false, "When guessing params, use the assetnote wordlist");
-        guessSettings.register("use custom wordlist", false, "Load a custom wordlist from the configured path");
-        guessSettings.register("custom wordlist path", "/usr/share/dict/words", "Load a custom wordlist from the configured path");
-        guessSettings.register("bruteforce", false, "When all the wordlist have run out, switch to guessing params with a never-ending pure bruteforce attack.");
-        guessSettings.register("skip uncacheable", false, "Refuse to guess params on responses that aren't cacheable?");
-        guessSettings.register("dynamic keyload", false, "When guessing params, extract words from every observed response. This is very powerful and quite buggy.");
-        guessSettings.register("max one per host", false);
-        guessSettings.register("max one per host+status", false);
-        guessSettings.register("probe identified params", true, "Attempt to identify what type of input discovered parameters expect.");
-        guessSettings.register("scan identified params", false, "Launch an active scan against every discovered parameter");
-        guessSettings.register("fuzz detect", false, "Detect parameters by specifying a fuzz-string as a value, designed to cause errors");
-        guessSettings.register("carpet bomb", false, "Send parameters as usual, but don't attempt to identify/report valid ones. Useful for OAST techniques.");
-        guessSettings.register("try cache poison", true, "After discovering a parameter, test whether it can be used for cache poisoning");
-        guessSettings.register("twitchy cache poison", false, "Make cache poisoning detection capable of detecting non-reflected input (but more prone to FPs)");
-        guessSettings.register("try method flip", false, "Try flipping GET to POST to fit more parameters in each request");
-        guessSettings.register("identify smuggle mutations", false, "Try using desync-style mutations to bypass header rewriting by front-ends.");
-        guessSettings.register("try -_ bypass", false, "Convert all instances of - to _ in header names, to bypass some front-end rewrites");
-        guessSettings.register("rotation interval", 999, "This doesn't work");
-        guessSettings.register("rotation increment", 4, "This doesn't work");
-        guessSettings.register("force bucketsize", -1, "Specify the number of parameters allowed in a single request. Set this to -1 to let Param Miner automatically determine this value on a per-target basis.");
-        guessSettings.register("max bucketsize", 65536, "Maximum number of parameters Param Miner will consider putting in a single request if the server allows it.");
-        guessSettings.register("max param length", 32, "This is used alongside the bucketsize detection");
-        guessSettings.register("lowercase headers", true, "Send header names in lowercase. Good for efficiency.");
-        guessSettings.register("name in issue", false, "Include the parameter name in the issue title");
-        guessSettings.register("canary", "zwrtxqva", "Fixed prefix used to detect input reflection");
-        guessSettings.register("force canary", "", "Use this to override the canary - useful with carpet bomb mode");
-        guessSettings.register("poison only", false, "Don't report parameters if you can't use them for cache poisoning");
-        guessSettings.register("tunnelling retry count", 20, "When attempting to mine a tunelled request, give up after this many consecutive failures to get a nested response");
-        guessSettings.register("abort on tunnel failure", true, "When attempting to mine a tunelled request, give up if the tunnel retry count is exceeded");
-
         loadWordlists();
         BlockingQueue<Runnable> tasks;
-        if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
-            tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
-        }
-        else {
-            tasks = new LinkedBlockingQueue<>();
-        }
+        tasks = new LinkedBlockingQueue<>();
 
         Utilities.globalSettings.registerSetting("thread pool size", 8);
         taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
