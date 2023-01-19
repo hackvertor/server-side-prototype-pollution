@@ -1,5 +1,34 @@
 <p>This extension identifies server side prototype pollution vulnerabilities, and requires <strong>Burp Suite v2021.9</strong> or later.</p>
 
+<p>To use this extension simply right-click on a request, go to the extensions menu then server side prototype pollution and choose one of the scan options:</p>
+
+<ul>
+    <li>Body scan - Scans JSON bodies with the techniques</li>
+    <li>Body dot scan - Scans JSON bodies using dots, for example __proto__.x</li>
+    <li>Body square scan - Scans JSON bodies using square bracket syntax such as __proto__[x]</li>
+    <li>Param scan - Scan JSON inside query parameters and others. Note there has to be existing JSON in the base request.</li>
+    <li>Param dot scan - Scans for JSON inside query parameters using the dot syntax.</li>
+    <li>Param square scan - Scans for JSON inside query parameters using square bracket syntax.</li>
+    <li>Add js property scan - Used to find leaking JavaScript code by adding query parameters such as constructor.</li>
+    <li>JS property param scan - Used to find leaking JavaScript code by manipulating parameters with names like constructor.</li>
+    <li>Async body scan - Attempts to find prototype pollution asynchronously using the --inspect flag.</li>
+    <li>Async param scan - Attempts to find prototype pollution asynchronously using the --inspect flag inside query parameters and others.</li>
+    <li>Full scan - Tries to find prototype pollution using all the methods.</li>
+</ul>
+
+<p>Multiple techniques are used to detect prototype pollution and are described in the PortSwigger blog post.</p>
+
+<ul>
+    <li>JSON spaces</li>
+    <li>Async</li>
+    <li>Status</li>
+    <li>Options</li>
+    <li>Blitz</li>
+    <li>Exposed headers</li>
+    <li>Reflection</li>
+    <li>Non reflected property</li>
+</ul>
+
 <p>For further information, please refer to the whitepaper at 
 <a href="https://portswigger.net/research/server-side-prototype-pollution">https://portswigger.net/research/server-side-prototype-pollution</a></p>
 
