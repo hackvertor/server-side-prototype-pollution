@@ -128,17 +128,17 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
-        new PrototypePollutionBodyScan("Prototype pollution body scan");
-        new PrototypePollutionBodyDotScan("Prototype pollution body dot scan");
-        new PrototypePollutionBodySquareScan("Prototype pollution body square scan");
-        new PrototypePollutionParamScan("Prototype pollution param scan");
-        new PrototypePollutionParamDotScan("Prototype pollution param dot scan");
-        new PrototypePollutionParamSquareScan("Prototype pollution param square scan");
-        new PrototypePollutionAddJSPropertyScan("Prototype pollution add js property scan");
-        new PrototypePollutionJSPropertyParamScan("Prototype pollution js property param scan");
-        new PrototypePollutionAsyncBodyScan("Prototype pollution async body scan");
-        new PrototypePollutionAsyncParamScan("Prototype pollution async param scan");
-        new KitchenSink("Prototype pollution full scan");
+        new PrototypePollutionBodyScan("Body scan");
+        new PrototypePollutionBodyDotScan("Body dot scan");
+        new PrototypePollutionBodySquareScan("Body square scan");
+        new PrototypePollutionParamScan("Param scan");
+        new PrototypePollutionParamDotScan("Param dot scan");
+        new PrototypePollutionParamSquareScan("Param square scan");
+        new PrototypePollutionAddJSPropertyScan("Add js property scan");
+        new PrototypePollutionJSPropertyParamScan("JS property param scan");
+        new PrototypePollutionAsyncBodyScan("Async body scan");
+        new PrototypePollutionAsyncParamScan("Async param scan");
+        new KitchenSink("Full scan");
 
         new BulkScanLauncher(BulkScan.scans);
 
