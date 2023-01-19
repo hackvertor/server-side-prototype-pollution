@@ -96,7 +96,7 @@ class Monitor implements Runnable, IExtensionStateListener {
 
             }
             Utilities.callbacks.addScanIssue(
-                new CustomScanIssue(Utilities.helpers.buildHttpService("unknown", 80, false), url, new IHttpRequestResponse[]{}, "Server side prototype pollution Collaborator Pingback (" + interaction.getProperty("type") + "): ", message + interaction.getProperties().toString(), severity, "Certain", "Panic")
+                new CustomScanIssue(Utilities.helpers.buildHttpService("unknown", 80, false), url, new IHttpRequestResponse[]{}, "Server Side Prototype Pollution Collaborator pingback (" + interaction.getProperty("type") + "): ", message + interaction.getProperties().toString(), severity, "Certain", "Panic")
             );
         }
     }
