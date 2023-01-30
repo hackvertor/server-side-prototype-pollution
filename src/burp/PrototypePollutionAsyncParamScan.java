@@ -14,8 +14,12 @@ public class PrototypePollutionAsyncParamScan extends ParamScan {
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         if(Utilities.globalSettings.getBoolean("async technique")) {
-            Utilities.out("--Running async param scan--");
-            injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionAsyncBodyScan.asyncTechniques);
+            if (Utilities.isBurpPro()) {
+                Utilities.out("--Running async param scan--");
+                injectInsertionPoint(baseRequestResponse, insertionPoint, PrototypePollutionAsyncBodyScan.asyncTechniques);
+            } else {
+                Utilities.err("Burp Collaborator is not supported in the community edition");
+            }
         }
         return null;
     }

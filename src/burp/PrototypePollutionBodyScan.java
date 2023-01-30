@@ -661,6 +661,31 @@ public class PrototypePollutionBodyScan extends Scan {
             Resp request = requests[i];
             reqsToReport.add(request.getReq());
         }
-        Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(base.getRequest(), service), reqsToReport.toArray(new IHttpRequestResponse[0]), title, detail, severity, confidence, remediation));
+
+        if (Utilities.isBurpPro()) {
+            Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(base.getRequest(), service), reqsToReport.toArray(new IHttpRequestResponse[0]), title, detail, severity, confidence, remediation));
+        } else {
+            StringBuilder serialisedIssue = new StringBuilder();
+            serialisedIssue.append("Found issue: ");
+            serialisedIssue.append(title);
+            serialisedIssue.append("\n");
+            serialisedIssue.append("Target: ");
+            serialisedIssue.append(service.getProtocol());
+            serialisedIssue.append("://");
+            serialisedIssue.append(service.getHost());
+            serialisedIssue.append("\n");
+            serialisedIssue.append(detail);
+            serialisedIssue.append("\n");
+            serialisedIssue.append("Evidence: \n======================================\n");
+            Iterator var13 = reqsToReport.iterator();
+
+            while(var13.hasNext()) {
+                IHttpRequestResponse req = (IHttpRequestResponse)var13.next();
+                serialisedIssue.append(Utilities.helpers.bytesToString(req.getRequest()));
+                serialisedIssue.append("\n======================================\n");
+            }
+
+            Utilities.out(serialisedIssue.toString());
+        }
     }
 }

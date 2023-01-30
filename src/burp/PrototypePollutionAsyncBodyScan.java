@@ -29,6 +29,10 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
         if(Utilities.globalSettings.getBoolean("async technique")) {
             Utilities.out("--Running async body scan--");
         }
+        if (!Utilities.isBurpPro()) {
+            Utilities.err("Burp Collaborator is not supported in the community edition");
+            return null;
+        }
         for (Map.Entry<String, String[]> technique : asyncTechniques.entrySet()) {
             if(!PrototypePollutionBodyScan.shouldUseTechnique(technique)) {
                 continue;
