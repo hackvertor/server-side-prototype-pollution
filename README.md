@@ -11,8 +11,8 @@ If you'd like to rate limit your attack, use the Distribute Damage extension.
 To use this extension simply right-click on a request, go to the extensions menu then server side prototype pollution and choose one of the scan options:
 
 - Body scan - Scans JSON bodies with the techniques
-- Body dot scan - Scans JSON bodies using dots, for example __proto__.x 
-- Body square scan - Scans JSON bodies using square bracket syntax such as __proto__[x]
+- Body dot scan - Scans JSON bodies using dots, for example `__proto__.x` 
+- Body square scan - Scans JSON bodies using square bracket syntax such as `__proto__[x]`
 - Param scan - Scan JSON inside query parameters and others. Note there has to be existing JSON in the base request. 
 - Param dot scan - Scans for JSON inside query parameters using the dot syntax. 
 - Param square scan - Scans for JSON inside query parameters using square bracket syntax. 
