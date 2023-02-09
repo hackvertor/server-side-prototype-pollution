@@ -102,6 +102,8 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
                         BurpExtender.collab.addCollboratorPayload(collabPayload, reqId);
                     }
                 }
+            } else {
+                Utilities.err("Invalid JSON:" + attackJson.toString());
             }
         }
     }
@@ -165,6 +167,15 @@ public class PrototypePollutionAsyncBodyScan extends Scan {
 
     PrototypePollutionAsyncBodyScan(String name) {
         super(name);
+        scanSettings.register("__proto__ techniques enabled", true, "This enables __proto__ based attacks");
+        scanSettings.register("constructor techniques enabled", false, "This enables constructor.prototype based attacks");
+        scanSettings.register("status technique", true, "This enables the status technique");
+        scanSettings.register("spacing technique", true, "This enables the spacing technique");
+        scanSettings.register("options technique", true, "This enables the options technique");
+        scanSettings.register("exposedHeaders technique", true, "This enables the exposedHeaders technique");
+        scanSettings.register("blitz technique", true, "This enables the blitz technique");
+        scanSettings.register("reflection technique", true, "This enables the reflection technique");
+        scanSettings.register("non reflected property technique", true, "This enables the non reflected property technique");
         scanSettings.register("async technique", true, "This enables the async technique");
     }
 

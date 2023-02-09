@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Server Side Prototype Pollution";
-    private static final String version = "1.0.4";
+    private static final String version = "1.0.5";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
@@ -89,6 +89,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         }
 
         Utilities.globalSettings.registerSetting("thread pool size", 8);
+        Utilities.globalSettings.registerSetting("key path", true);
         taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
             Utilities.out("Updating active thread pool size to "+value);
