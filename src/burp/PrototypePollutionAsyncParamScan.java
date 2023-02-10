@@ -43,7 +43,10 @@ public class PrototypePollutionAsyncParamScan extends ParamScan {
             String attackType = technique.getKey();
             String attackInjection = technique.getValue()[1];
             ArrayList<String> collabPayloads = new ArrayList<>();
-            technique.getValue()[1] = PrototypePollutionAsyncBodyScan.replacePlaceholderWithCollaboratorPayload(attackInjection, collabPayloads);
+            String[] vector = new String[] {
+                    technique.getValue()[0],
+                    PrototypePollutionAsyncBodyScan.replacePlaceholderWithCollaboratorPayload(attackInjection, collabPayloads)
+            };
             String baseValue = insertionPoint.getBaseValue();
             byte[] attackReq;
 
@@ -55,7 +58,7 @@ public class PrototypePollutionAsyncParamScan extends ParamScan {
                 attackReq = insertionPoint.buildRequest(attackInjection.getBytes());
             } else if (baseValue.trim().startsWith("{") && PrototypePollutionBodyScan.isValidJson(baseValue)) {
                 attackReq = baseRequestResponse.getRequest().clone();
-                JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, technique.getValue(), false);
+                JsonElement attackJson = PrototypePollutionBodyScan.generateJson(baseValue, vector, false);
                 attackReq = Utilities.helpers.updateParameter(attackReq, PrototypePollutionBodyScan.createParameter(insertionPoint.getInsertionPointName(), attackJson.toString(), insertionPoint.getInsertionPointType()));
             } else {
                 continue;
@@ -64,7 +67,9 @@ public class PrototypePollutionAsyncParamScan extends ParamScan {
             Resp reqResp = request(service, attackReq, PrototypePollutionBodyScan.MAX_RETRIES);
             int reqId = -1;
             if(collabPayloads.size() > 0) {
-                reqId = BurpExtender.collab.addRequest(new MetaRequest(reqResp.getReq()));
+                if(reqResp != null) {
+                    reqId = BurpExtender.collab.addRequest(new MetaRequest(reqResp.getReq()));
+                }
             }
             for (String collabPayload : collabPayloads) {
                 if(reqId > 0) {

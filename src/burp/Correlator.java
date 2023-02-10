@@ -20,7 +20,7 @@ class Correlator {
     }
 
     Integer addRequest(MetaRequest req) {
-        int requestCode = ++count;
+        int requestCode = count++;
         requests.put(requestCode, req);
         return requestCode;
     }
@@ -38,7 +38,11 @@ class Correlator {
     }
 
     MetaRequest getRequest(String collabId) {
-        int requestId = idToRequestID.get(collabId);
-        return requests.get(requestId);
+        if(idToRequestID.containsKey(collabId)) {
+            int requestId = idToRequestID.get(collabId);
+            return requests.get(requestId);
+        } else {
+            return null;
+        }
     }
 }

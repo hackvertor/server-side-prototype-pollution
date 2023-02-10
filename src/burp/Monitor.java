@@ -30,7 +30,7 @@ class Monitor implements Runnable, IExtensionStateListener {
             Utilities.out("Interrupted");
         }
         catch (Exception e) {
-            Utilities.out("Error fetching/handling interactions: "+e.getMessage());
+            Utilities.err("Error fetching/handling interactions: "+e + "; "+e.getStackTrace());
         }
 
         Utilities.out("Shutting down collaborator monitor thread");
