@@ -422,17 +422,17 @@ public class PrototypePollutionBodyScan extends Scan {
              String response = Utilities.getBody(baseResp.getReq().getResponse());
              if(hasSpacing(response)) {
                  byte[] nullifyAttackRequest = createRequestAndBuildJson(jsonString, baseReq, currentTechnique, hasBody, true, param);
-                 request(service, nullifyAttackRequest, MAX_RETRIES);
-                 Resp nullifyResponse = request(service, baseReq, MAX_RETRIES);
+                 Resp nullifyRequest = request(service, nullifyAttackRequest, MAX_RETRIES);
+                 Resp baseResponseRepeated = request(service, baseReq, MAX_RETRIES);
 
-                 if(nullifyResponse.failed() || nullifyResponse.getReq().getResponse() == null) {
+                 if(baseResponseRepeated.failed() || baseResponseRepeated.getReq().getResponse() == null) {
                      return;
                  }
 
-                 String nullifyResponseStr = Utilities.getBody(nullifyResponse.getReq().getResponse());
+                 String nullifyResponseStr = Utilities.getBody(baseResponseRepeated.getReq().getResponse());
                  if(!hasSpacing(nullifyResponseStr)) {
-                     IHttpRequestResponseWithMarkers baseRespWithMarkers = Utilities.callbacks.applyMarkers(baseResp.getReq(), null, PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(baseResp, PrototypePollutionBodyScan.SPACING_REGEX, true));
-                     reportIssue("Server side prototype pollution via JSON spacing", DETAIL + " Using the technique "+attackType+". It seems possible to alter the JSON spacing of a response using prototype pollution.", "High", "Firm", REMEDIATION, baseReq, attackResp, new Resp(baseRespWithMarkers), nullifyResponse);
+                     IHttpRequestResponseWithMarkers attackRespWithMarkers = Utilities.callbacks.applyMarkers(attackResp.getReq(), null, PrototypePollutionJSPropertyParamScan.getRegexMarkerPositions(attackResp, PrototypePollutionBodyScan.SPACING_REGEX, true));
+                     reportIssue("Server side prototype pollution via JSON spacing", DETAIL + " Using the technique "+attackType+". It seems possible to alter the JSON spacing of a response using prototype pollution.", "High", "Firm", REMEDIATION, baseReq, new Resp(attackRespWithMarkers), nullifyRequest, baseResponseRepeated);
                  }
              }
          } else if(attackType.contains("status")) {
